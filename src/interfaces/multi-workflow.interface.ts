@@ -1,11 +1,6 @@
 // src/interfaces/multi-workflow.interface.ts
 // Importa las interfaces base sin el "$" para el mapeo
-import type { IMapping, ITransformation, ITableAttribute, IInstance, IConnector, ITargetLoadOrder, IMappingVariable, IMetaDataExtension, ITransformField } from './mapping.interface';
-import type { ISource, ITarget, IField, IFlatFile } from './powermart.interface';
-import type { IWorkflow, ITask, IValuePair, ITaskInstance, IWorkflowLink, IWorkflowVariable, IScheduler, IScheduleInfo, IConfig } from './workflow.interface';
-import type { ISession, ISessTransformationInst, ISessionExtension, IConnectionReference, IConfigReference, ISessionComponent } from './sessiones.interface';
-import type { IPowerMart } from './powermart.interface';
-
+import type { IPowerMart } from "./powermart.interface";
 
 /**
  * Helper para asegurar que un elemento siempre se trate como un array.
