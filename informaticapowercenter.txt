@@ -717,7 +717,7 @@ import {
   type IWorkflow,
   type IWorkflowLink,
   type IWorkflowVariable,
-} from "./interfaces";
+} from "./interfaces/index.ts";
 
 const xmlFilePath = path.join(process.cwd(), "wkf_03_DI_CARGA_INDICADORES.XML");
 const outputJsonFilePath = path.join(process.cwd(), "public/extraction.json"); // Guarda en public/
@@ -1179,11 +1179,11 @@ createRoot(document.getElementById('root')!).render(
 
 // src/interfaces/index.ts
 
-export * from './mapping.interface';
-export * from './multi-workflow.interface';
-export * from './powermart.interface';
-export * from './sessiones.interface';
-export * from './workflow.interface';
+export * from './mapping.interface.ts';
+export * from './multi-workflow.interface.ts';
+export * from './powermart.interface.ts';
+export * from './sessiones.interface.ts';
+export * from './workflow.interface.ts';
 
 
 --------------------------------------------------------------------------------

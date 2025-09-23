@@ -56,7 +56,7 @@ import {
   type IWorkflow,
   type IWorkflowLink,
   type IWorkflowVariable,
-} from "./interfaces";
+} from "./interfaces/index.ts";
 
 const xmlFilePath = path.join(process.cwd(), "wkf_03_DI_CARGA_INDICADORES.XML");
 const outputJsonFilePath = path.join(process.cwd(), "public/extraction.json"); // Guarda en public/
