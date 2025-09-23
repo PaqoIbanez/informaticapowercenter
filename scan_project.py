@@ -48,7 +48,7 @@ EXTRA_IGNORE_PATTERNS: List[str] = [
     ".editorconfig",
     "scan_project.py",
     ".gitignore",
-    # "wkf_03_DI_CARGA_INDICADORES.XML"
+    "wkf_03_DI_CARGA_INDICADORES.XML"
 ]
 
 # ----------------------------- .gitignore helpers -----------------------------
