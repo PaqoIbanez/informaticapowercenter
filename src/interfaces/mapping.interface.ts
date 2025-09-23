@@ -1,21 +1,35 @@
+// src/interfaces/mapping.interface.ts
+
+/**
+ * Atributos clave-valor que definen el comportamiento de diversos elementos.
+ * Los atributos se fusionan como propiedades directas.
+ */
+export interface ITableAttribute {
+  NAME: string;
+  VALUE: string;
+}
+
 /**
  * Representa un mapeo (Mapping) que define el flujo de datos.
+ * Los atributos se fusionan como propiedades directas.
  */
 export interface IMapping {
   NAME: string;
-  DESCRIPTION?: string;
   ISVALID: "YES" | "NO";
-  VERSIONNUMBER: string;
   OBJECTVERSION: string;
+  VERSIONNUMBER: string;
+  DESCRIPTION?: string;
   TRANSFORMATION?: ITransformation[];
   INSTANCE?: IInstance[];
   CONNECTOR?: IConnector[];
   TARGETLOADORDER?: ITargetLoadOrder[];
   MAPPINGVARIABLE?: IMappingVariable[];
+  ERPINFO?: object; // Etiqueta vacía en el XML
 }
 
 /**
- * Representa una transformación dentro de un mapeo (p.ej. Expression, Filter).
+ * Representa una transformación dentro de un mapeo (ej. Expression, Filter).
+ * Los atributos se fusionan como propiedades directas.
  */
 export interface ITransformation {
   NAME: string;
@@ -26,18 +40,20 @@ export interface ITransformation {
     | "Aggregator"
     | "Joiner"
     | "Lookup Procedure"
-    | "Update Strategy";
-  DESCRIPTION?: string;
+    | "Update Strategy"
+    | "Sorter"; // Añadido "Sorter"
   OBJECTVERSION: string;
   REUSABLE: "YES" | "NO";
   VERSIONNUMBER: string;
-  TRANSFORMFIELD: ITransformField[];
-  TABLEATTRIBUTE: ITableAttribute[];
-  METADATAEXTENSION?: IMetaDataExtension[];
+  DESCRIPTION?: string;
+  TRANSFORMFIELD?: ITransformField[];
+  TABLEATTRIBUTE?: ITableAttribute[];
+  METADATAEXTENSION?: IMetaDataExtension[]; // Extensión de metadatos (opcional)
 }
 
 /**
- * Representa un puerto (port) dentro de una transformación.
+ * Representa un puerto (campo) dentro de una transformación.
+ * Los atributos se fusionan como propiedades directas.
  */
 export interface ITransformField {
   NAME: string;
@@ -48,7 +64,15 @@ export interface ITransformField {
     | "LOOKUP/OUTPUT"
     | "LOOKUP/RETURN/OUTPUT"
     | "INPUT/OUTPUT/MASTER";
-  DATATYPE: string;
+  DATATYPE:
+    | "nstring"
+    | "date/time"
+    | "decimal"
+    | "string"
+    | "integer"
+    | "number(p,s)"
+    | "varchar2"
+    | "number"; // Tipos de datos extendidos
   PRECISION: string;
   SCALE: string;
   DEFAULTVALUE?: string;
@@ -56,19 +80,14 @@ export interface ITransformField {
   EXPRESSION?: string;
   EXPRESSIONTYPE?: "GENERAL" | "GROUPBY";
   PICTURETEXT?: string;
-}
-
-/**
- * Atributos clave-valor que definen el comportamiento de una transformación
- * (p.ej. 'Sql Query', 'Join Condition', 'Filter Condition').
- */
-export interface ITableAttribute {
-  NAME: string;
-  VALUE: string;
+  // Específicos para transformaciones Sorter
+  ISSORTKEY?: "YES" | "NO";
+  SORTDIRECTION?: "ASCENDING" | "DESCENDING";
 }
 
 /**
  * Instancia de una transformación, fuente o destino dentro de un mapeo.
+ * Los atributos se fusionan como propiedades directas.
  */
 export interface IInstance {
   NAME: string;
@@ -77,12 +96,16 @@ export interface IInstance {
   TRANSFORMATION_TYPE: string;
   DESCRIPTION?: string;
   REUSABLE?: "YES" | "NO";
-  DBDNAME?: string;
-  ASSOCIATED_SOURCE_INSTANCE?: { NAME: string };
+  DBDNAME?: string; // Presente para instancias de fuentes/destinos
+  ASSOCIATED_SOURCE_INSTANCE?: {
+    NAME: string;
+  };
+  TABLEATTRIBUTE?: ITableAttribute[]; // Las instancias también pueden tener atributos (ej. "Table Name Prefix" para TARGET)
 }
 
 /**
  * Define la conexión entre los puertos de dos instancias en un mapeo.
+ * Los atributos se fusionan como propiedades directas.
  */
 export interface IConnector {
   FROMFIELD: string;
@@ -95,6 +118,7 @@ export interface IConnector {
 
 /**
  * Define el orden de carga para los destinos en un mapeo.
+ * Los atributos se fusionan como propiedades directas.
  */
 export interface ITargetLoadOrder {
   ORDER: string;
@@ -102,24 +126,27 @@ export interface ITargetLoadOrder {
 }
 
 /**
- * Variable definida a nivel de mapeo (p.ej. $$AtributoPF).
+ * Una variable definida a nivel de mapeo (ej. $$AtributoPF).
+ * Los atributos se fusionan como propiedades directas.
  */
 export interface IMappingVariable {
   NAME: string;
   DATATYPE: string;
   ISPARAM: "YES" | "NO";
   USERDEFINED: "YES" | "NO";
-  DEFAULTVALUE?: string;
   PRECISION: string;
   SCALE: string;
+  DEFAULTVALUE?: string;
+  DESCRIPTION?: string;
+  ISEXPRESSIONVARIABLE?: "YES" | "NO";
 }
 
 /**
  * Extensión de metadatos para transformaciones.
+ * Los atributos se fusionan como propiedades directas.
  */
 export interface IMetaDataExtension {
   DATATYPE: string;
-  DESCRIPTION?: string;
   DOMAINNAME: string;
   ISCLIENTEDITABLE: "YES" | "NO";
   ISCLIENTVISIBLE: "YES" | "NO";
@@ -130,4 +157,5 @@ export interface IMetaDataExtension {
   NAME: string;
   VALUE: string;
   VENDORNAME: string;
+  DESCRIPTION?: string;
 }

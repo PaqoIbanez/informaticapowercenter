@@ -1,15 +1,19 @@
+// src/App.tsx
 import { useState, useEffect } from "react";
+// Importa la nueva interfaz IFlatExtractionData y las interfaces mapeadas necesarias
+import type { IFlatExtractionData } from "./interfaces/multi-workflow.interface"; 
 
 function App() {
   const [activeSection, setActiveSection] = useState("dashboard");
-  const [data, setData] = useState(null);
+  // Usa la nueva interfaz IFlatExtractionData
+  const [data, setData] = useState<IFlatExtractionData | null>(null); 
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    // Cargar datos del JSON
-    fetch("/extraction.json")
+    // Cargar datos del JSON, asumiendo que "extraction.json" está en la carpeta 'public'
+    fetch("/extraction.json") 
       .then((response) => response.json())
-      .then((json) => setData(json))
+      .then((json: IFlatExtractionData) => setData(json)) // Casteo a IFlatExtractionData
       .catch((error) => console.error("Error loading data:", error));
   }, []);
 
@@ -33,26 +37,26 @@ function App() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg shadow-lg">
                 <h3 className="text-lg font-semibold">Mappings</h3>
-                <p>{data.REPOSITORY.FOLDER.MAPPING?.length || 0} disponibles</p>
+                <p>{data.summary.totalMappings} disponibles</p>
               </div>
               <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-lg shadow-lg">
                 <h3 className="text-lg font-semibold">Workflows</h3>
-                <p>{data.REPOSITORY.FOLDER.WORKFLOW ? 1 : 0} disponibles</p>
+                <p>{data.summary.totalWorkflows} disponibles</p>
               </div>
               <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-lg shadow-lg">
                 <h3 className="text-lg font-semibold">Sources</h3>
-                <p>{data.REPOSITORY.FOLDER.SOURCE?.length || 0} disponibles</p>
+                <p>{data.summary.totalSources} disponibles</p>
               </div>
               <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-4 rounded-lg shadow-lg">
                 <h3 className="text-lg font-semibold">Targets</h3>
-                <p>{data.REPOSITORY.FOLDER.TARGET?.length || 0} disponibles</p>
+                <p>{data.summary.totalTargets} disponibles</p>
               </div>
             </div>
           </div>
         );
       case "mappings":
-        const filteredMappings = data.REPOSITORY.FOLDER.MAPPING?.filter(mapping =>
-          mapping.$?.NAME?.toLowerCase().includes(searchTerm.toLowerCase())
+        const filteredMappings = data.mappings?.filter(mapping =>
+          mapping.name?.toLowerCase().includes(searchTerm.toLowerCase())
         );
         return (
           <div className="p-6">
@@ -64,11 +68,11 @@ function App() {
                   className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
                 >
                   <h3 className="text-lg font-semibold text-blue-600">
-                    {mapping.$?.NAME}
+                    {mapping.name}
                   </h3>
-                  <p className="text-gray-600">Estado: {mapping.$?.ISVALID}</p>
+                  <p className="text-gray-600">Estado: {mapping.isValid}</p>
                   <p className="text-gray-600">
-                    Transformaciones: {mapping.TRANSFORMATION?.length || 0}
+                    Transformaciones: {mapping.transformations?.length || 0}
                   </p>
                 </div>
               )) || <p>No hay mappings disponibles.</p>}
@@ -76,10 +80,9 @@ function App() {
           </div>
         );
       case "workflows":
-        const filteredWorkflows = data.REPOSITORY.FOLDER.WORKFLOW &&
-          data.REPOSITORY.FOLDER.WORKFLOW.$.NAME?.toLowerCase().includes(searchTerm.toLowerCase())
-          ? [data.REPOSITORY.FOLDER.WORKFLOW]
-          : [];
+        const filteredWorkflows = data.workflows?.filter(workflow =>
+          workflow.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold mb-4">Workflows</h2>
@@ -90,13 +93,13 @@ function App() {
                   className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
                 >
                   <h3 className="text-lg font-semibold text-green-600">
-                    {workflow.$.NAME}
+                    {workflow.name}
                   </h3>
                   <p className="text-gray-600">
-                    Estado: {workflow.ISVALID} / {workflow.ISENABLED}
+                    Estado: {workflow.isValid} / {workflow.isEnabled}
                   </p>
                   <p className="text-gray-600">
-                    Tareas: {workflow.TASKINSTANCE?.length || 0}
+                    Tareas: {workflow.tasks?.length || 0}
                   </p>
                 </div>
               ))}
@@ -104,8 +107,8 @@ function App() {
           </div>
         );
       case "sources":
-        const filteredSources = data.REPOSITORY.FOLDER.SOURCE?.filter(source =>
-          source.$?.NAME?.toLowerCase().includes(searchTerm.toLowerCase())
+        const filteredSources = data.sources?.filter(source =>
+          source.name?.toLowerCase().includes(searchTerm.toLowerCase())
         );
         return (
           <div className="p-6">
@@ -117,22 +120,22 @@ function App() {
                   className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
                 >
                   <h3 className="text-lg font-semibold text-purple-600">
-                    {source.$?.NAME}
+                    {source.name}
                   </h3>
                   <p className="text-gray-600">
-                    Tipo: {source.$?.DATABASETYPE}
+                    Tipo: {source.databaseType}
                   </p>
                   <div className="text-gray-600">
-                    <p className="font-medium">Campos ({source.SOURCEFIELD?.length || 0}):</p>
+                    <p className="font-medium">Campos ({source.fields?.length || 0}):</p>
                     <div className="max-h-20 overflow-y-auto text-sm">
-                      {source.SOURCEFIELD?.slice(0, 5).map((field, idx) => (
+                      {source.fields?.slice(0, 5).map((field, idx) => (
                         <div key={idx} className="flex justify-between">
-                          <span>{field.$?.NAME}</span>
-                          <span className="text-gray-500">{field.$?.DATATYPE}</span>
+                          <span>{field.name}</span>
+                          <span className="text-gray-500">{field.dataType}</span>
                         </div>
                       ))}
-                      {(source.SOURCEFIELD?.length || 0) > 5 && (
-                        <p className="text-gray-400">... y {(source.SOURCEFIELD.length - 5)} más</p>
+                      {(source.fields?.length || 0) > 5 && (
+                        <p className="text-gray-400">... y {(source.fields.length - 5)} más</p>
                       )}
                     </div>
                   </div>
@@ -142,8 +145,8 @@ function App() {
           </div>
         );
       case "targets":
-        const filteredTargets = data.REPOSITORY.FOLDER.TARGET?.filter(target =>
-          target.$?.NAME?.toLowerCase().includes(searchTerm.toLowerCase())
+        const filteredTargets = data.targets?.filter(target =>
+          target.name?.toLowerCase().includes(searchTerm.toLowerCase())
         );
         return (
           <div className="p-6">
@@ -155,22 +158,22 @@ function App() {
                   className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
                 >
                   <h3 className="text-lg font-semibold text-red-600">
-                    {target.$?.NAME}
+                    {target.name}
                   </h3>
                   <p className="text-gray-600">
-                    Tipo: {target.$?.DATABASETYPE}
+                    Tipo: {target.databaseType}
                   </p>
                   <div className="text-gray-600">
-                    <p className="font-medium">Campos ({target.TARGETFIELD?.length || 0}):</p>
+                    <p className="font-medium">Campos ({target.fields?.length || 0}):</p>
                     <div className="max-h-20 overflow-y-auto text-sm">
-                      {target.TARGETFIELD?.slice(0, 5).map((field, idx) => (
+                      {target.fields?.slice(0, 5).map((field, idx) => (
                         <div key={idx} className="flex justify-between">
-                          <span>{field.$?.NAME}</span>
-                          <span className="text-gray-500">{field.$?.DATATYPE}</span>
+                          <span>{field.name}</span>
+                          <span className="text-gray-500">{field.dataType}</span>
                         </div>
                       ))}
-                      {(target.TARGETFIELD?.length || 0) > 5 && (
-                        <p className="text-gray-400">... y {(target.TARGETFIELD.length - 5)} más</p>
+                      {(target.fields?.length || 0) > 5 && (
+                        <p className="text-gray-400">... y {(target.fields.length - 5)} más</p>
                       )}
                     </div>
                   </div>
@@ -180,85 +183,68 @@ function App() {
           </div>
         );
       case "sessions":
-        const filteredSessions = data.REPOSITORY.FOLDER.WORKFLOW?.TASKINSTANCE?.filter(
-          (task) => task.$?.TASKTYPE === "Session" &&
-            task.$?.NAME?.toLowerCase().includes(searchTerm.toLowerCase())
+        const filteredSessions = data.sessions?.filter(session =>
+          session.name?.toLowerCase().includes(searchTerm.toLowerCase())
         );
-
-        const getMappingDetails = (task) => {
-          let mappingName = task.ATTRIBUTE?.find(attr => attr.$?.NAME === 'Mapping Name')?.$?.VALUE;
-
-          // Fallback: si no hay atributo, derivar del nombre de la sesión
-          if (!mappingName) {
-            const sessionName = task.$?.NAME;
-            if (sessionName?.startsWith('s_m_')) {
-              mappingName = sessionName.replace(/^s_m_/, 'm_');
-            }
-          }
-
-          if (!mappingName) return { sources: [], targets: [], mapping: null };
-
-          const mapping = data.REPOSITORY.FOLDER.MAPPING?.find(m => m.$?.NAME === mappingName);
-          if (!mapping) return { sources: [], targets: [], mapping: null };
-
-          const sources = mapping.INSTANCE?.filter(inst => inst.$?.TYPE === 'SOURCE')
-            .map(inst => inst.$?.NAME) || [];
-
-          const targets = mapping.INSTANCE?.filter(inst => inst.$?.TYPE === 'TARGET')
-            .map(inst => inst.$?.NAME) || [];
-
-          return { sources, targets, mapping };
-        };
 
         return (
           <div className="p-6">
             <h2 className="text-2xl font-bold mb-4">Sessions</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredSessions?.map((task, index) => {
-                const { sources, targets, mapping } = getMappingDetails(task);
+              {filteredSessions?.map((session, index) => {
+                // Ahora los detalles del mapeo se pueden buscar de data.mappings
+                const mappedMapping = data.mappings.find(m => m.name === session.mappingName);
+
+                const sourceNames = mappedMapping?.instances
+                  .filter(inst => inst.type === 'SOURCE')
+                  .map(inst => inst.name) || [];
+                const targetNames = mappedMapping?.instances
+                  .filter(inst => inst.type === 'TARGET')
+                  .map(inst => inst.name) || [];
+                const transformationNames = mappedMapping?.instances
+                  .filter(inst => inst.type === 'TRANSFORMATION')
+                  .map(inst => `${inst.name} (${inst.transformationType})`) || [];
+
                 return (
                   <div
                     key={index}
                     className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
                   >
                     <h3 className="text-lg font-semibold text-green-600">
-                      {task.$?.NAME}
+                      {session.name}
                     </h3>
-                    <p className="text-gray-600">Tipo: {task.$?.TASKTYPE}</p>
-                    <p className="text-gray-600">Estado: {task.$?.ISENABLED}</p>
+                    <p className="text-gray-600">Mapping: {session.mappingName}</p>
+                    <p className="text-gray-600">Estado: {session.isValid}</p>
                     <div className="text-gray-600 mt-2">
-                      <p className="font-medium">Sources ({sources.length}):</p>
+                      <p className="font-medium">Sources ({sourceNames.length}):</p>
                       <div className="max-h-16 overflow-y-auto text-sm">
-                        {sources.slice(0, 3).map((src, idx) => (
+                        {sourceNames.slice(0, 3).map((src, idx) => (
                           <div key={idx}>{src}</div>
                         ))}
-                        {sources.length > 3 && (
-                          <p className="text-gray-400">... y {sources.length - 3} más</p>
+                        {sourceNames.length > 3 && (
+                          <p className="text-gray-400">... y {sourceNames.length - 3} más</p>
                         )}
                       </div>
                     </div>
                     <div className="text-gray-600 mt-2">
-                      <p className="font-medium">Targets ({targets.length}):</p>
+                      <p className="font-medium">Targets ({targetNames.length}):</p>
                       <div className="max-h-16 overflow-y-auto text-sm">
-                        {targets.slice(0, 3).map((tgt, idx) => (
+                        {targetNames.slice(0, 3).map((tgt, idx) => (
                           <div key={idx}>{tgt}</div>
                         ))}
-                        {targets.length > 3 && (
-                          <p className="text-gray-400">... y {targets.length - 3} más</p>
+                        {targetNames.length > 3 && (
+                          <p className="text-gray-400">... y {targetNames.length - 3} más</p>
                         )}
                       </div>
                     </div>
                     <div className="text-gray-600 mt-2">
-                      <p className="font-medium">Transformaciones ({mapping?.INSTANCE?.filter(inst => inst.$?.TYPE === 'TRANSFORMATION').length || 0}):</p>
+                      <p className="font-medium">Transformaciones ({transformationNames.length}):</p>
                       <div className="max-h-16 overflow-y-auto text-sm">
-                        {mapping?.INSTANCE?.filter(inst => inst.$?.TYPE === 'TRANSFORMATION').slice(0, 5).map((trans, idx) => (
-                          <div key={idx} className="flex justify-between">
-                            <span>{trans.$?.TRANSFORMATION_NAME}</span>
-                            <span className="text-gray-500">({trans.$?.TRANSFORMATION_TYPE})</span>
-                          </div>
+                        {transformationNames.slice(0, 5).map((trans, idx) => (
+                          <div key={idx}>{trans}</div>
                         ))}
-                        {(mapping?.INSTANCE?.filter(inst => inst.$?.TYPE === 'TRANSFORMATION').length || 0) > 5 && (
-                          <p className="text-gray-400">... y {(mapping.INSTANCE.filter(inst => inst.$?.TYPE === 'TRANSFORMATION').length - 5)} más</p>
+                        {transformationNames.length > 5 && (
+                          <p className="text-gray-400">... y {(transformationNames.length - 5)} más</p>
                         )}
                       </div>
                     </div>
