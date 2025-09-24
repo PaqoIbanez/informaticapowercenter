@@ -1,5 +1,5 @@
 // src/interfaces/sessiones.interface.ts
-import type { ITableAttribute } from './mapping.interface';
+import type { ITableAttribute } from "./mapping.interface";
 
 /**
  * Representa una sesión, que es la instancia ejecutable de un mapeo.

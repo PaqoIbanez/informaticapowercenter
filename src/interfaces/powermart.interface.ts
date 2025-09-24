@@ -1,7 +1,7 @@
 // src/interfaces/powermart.interface.ts
-import type { IMapping, ITableAttribute } from './mapping.interface';
-import type { ISession } from './sessiones.interface';
-import type { IWorkflow, IConfig, ITask } from './workflow.interface';
+import type { IMapping, ITableAttribute } from "./mapping.interface";
+import type { ISession } from "./sessiones.interface";
+import type { IConfig, ITask, IWorkflow } from "./workflow.interface";
 
 /**
  * Representa el nodo raíz del documento XML de PowerCenter.
@@ -56,22 +56,22 @@ export interface IField {
   KEYTYPE: "PRIMARY KEY" | "NOT A KEY" | "PRIMARY FOREIGN KEY" | "FOREIGN KEY";
   NULLABLE: "NULL" | "NOTNULL";
   PRECISION: string; // Ej. "19", "200"
-  SCALE: string;     // Ej. "0", "9"
+  SCALE: string; // Ej. "0", "9"
   DESCRIPTION?: string;
   BUSINESSNAME?: string;
   FIELDNUMBER: string;
   PICTURETEXT?: string;
   // Atributos específicos para SOURCEFIELD (se hacen opcionales para reutilizar en TARGETFIELD)
   FIELDPROPERTY?: string; // Ej. "0"
-  FIELDTYPE?: string;     // Ej. "ELEMITEM"
-  HIDDEN?: "YES" | "NO";  // Ej. "NO"
-  LENGTH?: string;        // Ej. "19", "0", "10"
-  LEVEL?: string;         // Ej. "0"
-  OCCURS?: string;        // Ej. "0"
-  OFFSET?: string;        // Ej. "0", "19"
+  FIELDTYPE?: string; // Ej. "ELEMITEM"
+  HIDDEN?: "YES" | "NO"; // Ej. "NO"
+  LENGTH?: string; // Ej. "19", "0", "10"
+  LEVEL?: string; // Ej. "0"
+  OCCURS?: string; // Ej. "0"
+  OFFSET?: string; // Ej. "0", "19"
   PHYSICALLENGTH?: string; // Ej. "19", "200"
   PHYSICALOFFSET?: string; // Ej. "0", "19"
-  USAGE_FLAGS?: string;   // Ej. ""
+  USAGE_FLAGS?: string; // Ej. ""
 }
 
 /**
@@ -103,7 +103,7 @@ export interface ITarget {
   VERSIONNUMBER: string;
   DESCRIPTION?: string;
   BUSINESSNAME?: string; // Presente pero vacío en el ejemplo
-  CONSTRAINT?: string;   // Presente pero vacío en el ejemplo
+  CONSTRAINT?: string; // Presente pero vacío en el ejemplo
   TABLEOPTIONS?: string; // Presente pero vacío en el ejemplo
   TARGETFIELD?: IField[];
   TABLEATTRIBUTE?: ITableAttribute[]; // Los destinos pueden tener atributos como Pre/Post SQL

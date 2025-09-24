@@ -1,5 +1,5 @@
 // src/interfaces/workflow.interface.ts
-import type { ITableAttribute } from './mapping.interface';
+import type { ITableAttribute } from "./mapping.interface";
 
 /**
  * Representa el flujo de trabajo (Workflow) que orquesta la ejecución de tareas.

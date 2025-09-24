@@ -15,19 +15,34 @@
  - tsconfig.node.json
  - vite.config.ts
  - public/vite.svg
- - src/App.css
  - src/App.tsx
- - src/extractor.ts
- - src/index.css
  - src/main.tsx
  - src/vite-env.d.ts
  - src/assets/react.svg
+ - src/components/layout/Header.tsx
+ - src/components/layout/MainLayout.tsx
+ - src/components/layout/Sidebar.tsx
+ - src/components/ui/Card.tsx
+ - src/components/ui/Loader.tsx
+ - src/hooks/useEtlData.ts
  - src/interfaces/index.ts
  - src/interfaces/mapping.interface.ts
  - src/interfaces/multi-workflow.interface.ts
  - src/interfaces/powermart.interface.ts
  - src/interfaces/sessiones.interface.ts
  - src/interfaces/workflow.interface.ts
+ - src/lib/extractor.ts
+ - src/lib/mappingHelpers.js
+ - src/pages/Dashboard.tsx
+ - src/pages/Mappings.tsx
+ - src/pages/NotFound.tsx
+ - src/pages/Sessions.tsx
+ - src/pages/Sources.tsx
+ - src/pages/Targets.tsx
+ - src/pages/Workflows.tsx
+ - src/router/index.tsx
+ - src/services/etlService.ts
+ - src/styles/index.css
 
 ================================================================================
 
@@ -62,7 +77,7 @@ export default defineConfig([
 
 <!-- index.html -->
 
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -90,12 +105,14 @@ export default defineConfig([
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "extract": "node --loader ts-node/esm src/lib/extractor.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.13",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-router-dom": "^6.25.1",
     "tailwindcss": "^4.1.13",
     "xml2js": "^0.6.2"
   },
@@ -109,6 +126,7 @@ export default defineConfig([
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.4.0",
+    "ts-node": "^10.9.2",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.44.0",
     "vite": "^7.1.7"
@@ -243,28 +261,17 @@ export default defineConfig([
 
 {
   "compilerOptions": {
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
-    "target": "ES2023",
-    "lib": ["ES2023"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-
-    /* Bundler mode */
-    "moduleResolution": "bundler",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
     "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "moduleDetection": "force",
-    "noEmit": true,
-
-    /* Linting */
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts","src/lib/**/*.ts"]
 }
 
 
@@ -291,858 +298,16 @@ export default defineConfig({
 
 --------------------------------------------------------------------------------
 
-/* src/App.css */
-
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
-}
-
-
---------------------------------------------------------------------------------
-
 // src/App.tsx
 
-// src/App.tsx
-import { useState, useEffect } from "react";
-// Importa la nueva interfaz IFlatExtractionData y las interfaces mapeadas necesarias
-import type { IFlatExtractionData } from "./interfaces/multi-workflow.interface"; 
+import { RouterProvider } from "react-router-dom";
+import { router } from "./router";
 
 function App() {
-  const [activeSection, setActiveSection] = useState("dashboard");
-  // Usa la nueva interfaz IFlatExtractionData
-  const [data, setData] = useState<IFlatExtractionData | null>(null); 
-  const [searchTerm, setSearchTerm] = useState("");
-
-  useEffect(() => {
-    // Cargar datos del JSON, asumiendo que "extraction.json" está en la carpeta 'public'
-    fetch("/extraction.json") 
-      .then((response) => response.json())
-      .then((json: IFlatExtractionData) => setData(json)) // Casteo a IFlatExtractionData
-      .catch((error) => console.error("Error loading data:", error));
-  }, []);
-
-  const sections = [
-    { id: "dashboard", name: "Dashboard", icon: "🏠" },
-    { id: "mappings", name: "Mappings", icon: "🔄" },
-    { id: "workflows", name: "Workflows", icon: "⚙️" },
-    { id: "sessions", name: "Sessions", icon: "📊" },
-    { id: "sources", name: "Sources", icon: "📥" },
-    { id: "targets", name: "Targets", icon: "📤" },
-  ];
-
-  const renderContent = () => {
-    if (!data) return <div className="p-6">Cargando datos...</div>;
-
-    switch (activeSection) {
-      case "dashboard":
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Dashboard ETL</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg shadow-lg">
-                <h3 className="text-lg font-semibold">Mappings</h3>
-                <p>{data.summary.totalMappings} disponibles</p>
-              </div>
-              <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-lg shadow-lg">
-                <h3 className="text-lg font-semibold">Workflows</h3>
-                <p>{data.summary.totalWorkflows} disponibles</p>
-              </div>
-              <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-lg shadow-lg">
-                <h3 className="text-lg font-semibold">Sources</h3>
-                <p>{data.summary.totalSources} disponibles</p>
-              </div>
-              <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-4 rounded-lg shadow-lg">
-                <h3 className="text-lg font-semibold">Targets</h3>
-                <p>{data.summary.totalTargets} disponibles</p>
-              </div>
-            </div>
-          </div>
-        );
-      case "mappings":
-        const filteredMappings = data.mappings?.filter(mapping =>
-          mapping.name?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Mappings</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredMappings?.map((mapping, index) => (
-                <div
-                  key={index}
-                  className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
-                >
-                  <h3 className="text-lg font-semibold text-blue-600">
-                    {mapping.name}
-                  </h3>
-                  <p className="text-gray-600">Estado: {mapping.isValid}</p>
-                  <p className="text-gray-600">
-                    Transformaciones: {mapping.transformations?.length || 0}
-                  </p>
-                </div>
-              )) || <p>No hay mappings disponibles.</p>}
-            </div>
-          </div>
-        );
-      case "workflows":
-        const filteredWorkflows = data.workflows?.filter(workflow =>
-          workflow.name?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Workflows</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredWorkflows.map((workflow, index) => (
-                <div
-                  key={index}
-                  className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
-                >
-                  <h3 className="text-lg font-semibold text-green-600">
-                    {workflow.name}
-                  </h3>
-                  <p className="text-gray-600">
-                    Estado: {workflow.isValid} / {workflow.isEnabled}
-                  </p>
-                  <p className="text-gray-600">
-                    Tareas: {workflow.tasks?.length || 0}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      case "sources":
-        const filteredSources = data.sources?.filter(source =>
-          source.name?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Sources</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredSources?.map((source, index) => (
-                <div
-                  key={index}
-                  className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
-                >
-                  <h3 className="text-lg font-semibold text-purple-600">
-                    {source.name}
-                  </h3>
-                  <p className="text-gray-600">
-                    Tipo: {source.databaseType}
-                  </p>
-                  <div className="text-gray-600">
-                    <p className="font-medium">Campos ({source.fields?.length || 0}):</p>
-                    <div className="max-h-20 overflow-y-auto text-sm">
-                      {source.fields?.slice(0, 5).map((field, idx) => (
-                        <div key={idx} className="flex justify-between">
-                          <span>{field.name}</span>
-                          <span className="text-gray-500">{field.dataType}</span>
-                        </div>
-                      ))}
-                      {(source.fields?.length || 0) > 5 && (
-                        <p className="text-gray-400">... y {(source.fields.length - 5)} más</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )) || <p>No hay sources disponibles.</p>}
-            </div>
-          </div>
-        );
-      case "targets":
-        const filteredTargets = data.targets?.filter(target =>
-          target.name?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Targets</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredTargets?.map((target, index) => (
-                <div
-                  key={index}
-                  className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
-                >
-                  <h3 className="text-lg font-semibold text-red-600">
-                    {target.name}
-                  </h3>
-                  <p className="text-gray-600">
-                    Tipo: {target.databaseType}
-                  </p>
-                  <div className="text-gray-600">
-                    <p className="font-medium">Campos ({target.fields?.length || 0}):</p>
-                    <div className="max-h-20 overflow-y-auto text-sm">
-                      {target.fields?.slice(0, 5).map((field, idx) => (
-                        <div key={idx} className="flex justify-between">
-                          <span>{field.name}</span>
-                          <span className="text-gray-500">{field.dataType}</span>
-                        </div>
-                      ))}
-                      {(target.fields?.length || 0) > 5 && (
-                        <p className="text-gray-400">... y {(target.fields.length - 5)} más</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )) || <p>No hay targets disponibles.</p>}
-            </div>
-          </div>
-        );
-      case "sessions":
-        const filteredSessions = data.sessions?.filter(session =>
-          session.name?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Sessions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredSessions?.map((session, index) => {
-                // Ahora los detalles del mapeo se pueden buscar de data.mappings
-                const mappedMapping = data.mappings.find(m => m.name === session.mappingName);
-
-                const sourceNames = mappedMapping?.instances
-                  .filter(inst => inst.type === 'SOURCE')
-                  .map(inst => inst.name) || [];
-                const targetNames = mappedMapping?.instances
-                  .filter(inst => inst.type === 'TARGET')
-                  .map(inst => inst.name) || [];
-                const transformationNames = mappedMapping?.instances
-                  .filter(inst => inst.type === 'TRANSFORMATION')
-                  .map(inst => `${inst.name} (${inst.transformationType})`) || [];
-
-                return (
-                  <div
-                    key={index}
-                    className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
-                  >
-                    <h3 className="text-lg font-semibold text-green-600">
-                      {session.name}
-                    </h3>
-                    <p className="text-gray-600">Mapping: {session.mappingName}</p>
-                    <p className="text-gray-600">Estado: {session.isValid}</p>
-                    <div className="text-gray-600 mt-2">
-                      <p className="font-medium">Sources ({sourceNames.length}):</p>
-                      <div className="max-h-16 overflow-y-auto text-sm">
-                        {sourceNames.slice(0, 3).map((src, idx) => (
-                          <div key={idx}>{src}</div>
-                        ))}
-                        {sourceNames.length > 3 && (
-                          <p className="text-gray-400">... y {sourceNames.length - 3} más</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-gray-600 mt-2">
-                      <p className="font-medium">Targets ({targetNames.length}):</p>
-                      <div className="max-h-16 overflow-y-auto text-sm">
-                        {targetNames.slice(0, 3).map((tgt, idx) => (
-                          <div key={idx}>{tgt}</div>
-                        ))}
-                        {targetNames.length > 3 && (
-                          <p className="text-gray-400">... y {targetNames.length - 3} más</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-gray-600 mt-2">
-                      <p className="font-medium">Transformaciones ({transformationNames.length}):</p>
-                      <div className="max-h-16 overflow-y-auto text-sm">
-                        {transformationNames.slice(0, 5).map((trans, idx) => (
-                          <div key={idx}>{trans}</div>
-                        ))}
-                        {transformationNames.length > 5 && (
-                          <p className="text-gray-400">... y {(transformationNames.length - 5)} más</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              }) || <p>No hay sesiones disponibles.</p>}
-            </div>
-          </div>
-        );
-      default:
-        return <div className="p-6">Selecciona una sección.</div>;
-    }
-  };
-
-  return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div className="w-64 bg-gradient-to-b from-gray-800 to-gray-900 text-white shadow-lg">
-        <div className="p-4">
-          <h1 className="text-xl font-bold">PowerCenter ETL</h1>
-        </div>
-        <nav className="mt-4">
-          {sections.map((section) => (
-            <button
-              key={section.id}
-              onClick={() => setActiveSection(section.id)}
-              className={`w-full text-left px-4 py-2 hover:bg-gray-700 transition-colors ${
-                activeSection === section.id ? "bg-gray-700" : ""
-              }`}
-            >
-              <span className="mr-2">{section.icon}</span>
-              {section.name}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="bg-white shadow-md p-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">Dashboard ETL</h1>
-          <div className="flex items-center space-x-4">
-            <input
-              type="text"
-              placeholder="Buscar..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="px-3 py-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <div className="flex items-center space-x-2">
-              <span>Usuario</span>
-              <div className="w-8 h-8 bg-blue-500 rounded-full"></div>
-            </div>
-          </div>
-        </header>
-
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto">{renderContent()}</main>
-      </div>
-    </div>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;
-
-
---------------------------------------------------------------------------------
-
-// src/extractor.ts
-
-// src/extractor.ts
-import * as fs from "fs";
-import * as path from "path";
-import { parseString } from "xml2js";
-import {
-  ensureArray,
-  type IConfig,
-  type IConnectionReference,
-  type IConnector,
-  type IExtractionResult,
-  type IField,
-  type IFlatExtractionData,
-  type IInstance,
-  type IMappedAttribute,
-  type IMappedConfig,
-  type IMappedConnectionReference,
-  type IMappedConnector,
-  type IMappedField,
-  type IMappedInstance,
-  type IMappedMapping,
-  type IMappedMappingVariable,
-  type IMappedMetadataExtension,
-  type IMappedScheduler,
-  type IMappedSession,
-  type IMappedSessionComponent,
-  type IMappedSessionExtension,
-  type IMappedSessTransformationInst,
-  type IMappedSource,
-  type IMappedTarget,
-  type IMappedTargetLoadOrder,
-  type IMappedTask,
-  type IMappedTaskInstance,
-  type IMappedTransformation,
-  type IMappedTransformField,
-  type IMappedValuePair,
-  type IMappedWorkflow,
-  type IMappedWorkflowLink,
-  type IMappedWorkflowVariable,
-  type IMapping,
-  type IMappingVariable,
-  type IMetaDataExtension,
-  type IScheduler,
-  type ISession,
-  type ISessionComponent,
-  type ISessionExtension,
-  type ISessTransformationInst,
-  type ISource,
-  type ITableAttribute,
-  type ITarget,
-  type ITargetLoadOrder,
-  type ITask,
-  type ITaskInstance,
-  type ITransformation,
-  type ITransformField,
-  type IValuePair,
-  type IWorkflow,
-  type IWorkflowLink,
-  type IWorkflowVariable,
-} from "./interfaces/index.ts";
-
-const xmlFilePath = path.join(process.cwd(), "wkf_03_DI_CARGA_INDICADORES.XML");
-const outputJsonFilePath = path.join(process.cwd(), "public/extraction.json"); // Guarda en public/
-
-// --- Funciones de mapeo (para aplanar y simplificar la estructura) ---
-
-function mapAttribute(attr: ITableAttribute): IMappedAttribute {
-  return {
-    name: attr.NAME,
-    value: attr.VALUE,
-  };
-}
-
-function mapField(field: IField): IMappedField {
-  return {
-    name: field.NAME,
-    dataType: field.DATATYPE,
-    keyType: field.KEYTYPE,
-    nullable: field.NULLABLE,
-    precision: field.PRECISION,
-    scale: field.SCALE,
-    description: field.DESCRIPTION,
-    length: field.LENGTH,
-    physicalLength: field.PHYSICALLENGTH,
-    fieldProperty: field.FIELDPROPERTY,
-    fieldType: field.FIELDTYPE,
-    hidden: field.HIDDEN,
-    level: field.LEVEL,
-    occurs: field.OCCURS,
-    offset: field.OFFSET,
-    usage_flags: field.USAGE_FLAGS,
-  };
-}
-
-function mapSource(source: ISource): IMappedSource {
-  return {
-    name: source.NAME,
-    databaseType: source.DATABASETYPE,
-    ownerName: source.OWNERNAME,
-    description: source.DESCRIPTION,
-    fields: ensureArray(source.SOURCEFIELD).map(mapField),
-    isFlatFile: !!source.FLATFILE, // Comprueba si existe la etiqueta FLATFILE
-    attributes: ensureArray(source.TABLEATTRIBUTE).map(mapAttribute),
-  };
-}
-
-function mapTarget(target: ITarget): IMappedTarget {
-  return {
-    name: target.NAME,
-    databaseType: target.DATABASETYPE,
-    description: target.DESCRIPTION,
-    fields: ensureArray(target.TARGETFIELD).map(mapField),
-    attributes: ensureArray(target.TABLEATTRIBUTE).map(mapAttribute),
-  };
-}
-
-function mapTransformField(field: ITransformField): IMappedTransformField {
-  return {
-    name: field.NAME,
-    portType: field.PORTTYPE,
-    dataType: field.DATATYPE,
-    precision: field.PRECISION,
-    scale: field.SCALE,
-    expression: field.EXPRESSION,
-    expressionType: field.EXPRESSIONTYPE,
-    description: field.DESCRIPTION,
-    isSortKey: field.ISSORTKEY,
-    sortDirection: field.SORTDIRECTION,
-    defaultValue: field.DEFAULTVALUE,
-    pictureText: field.PICTURETEXT,
-  };
-}
-
-function mapMetadataExtension(
-  ext: IMetaDataExtension
-): IMappedMetadataExtension {
-  return {
-    name: ext.NAME,
-    value: ext.VALUE,
-    dataType: ext.DATATYPE,
-    description: ext.DESCRIPTION,
-    vendorName: ext.VENDORNAME,
-    domainName: ext.DOMAINNAME,
-    isClientEditable: ext.ISCLIENTEDITABLE,
-    isClientVisible: ext.ISCLIENTVISIBLE,
-    isReusable: ext.ISREUSABLE,
-    isShareRead: ext.ISSHAREREAD,
-    isShareWrite: ext.ISSHAREWRITE,
-    maxLength: ext.MAXLENGTH,
-  };
-}
-
-function mapTransformation(trans: ITransformation): IMappedTransformation {
-  return {
-    name: trans.NAME,
-    type: trans.TYPE,
-    description: trans.DESCRIPTION,
-    reusable: trans.REUSABLE,
-    fields: ensureArray(trans.TRANSFORMFIELD).map(mapTransformField),
-    attributes: ensureArray(trans.TABLEATTRIBUTE).map(mapAttribute),
-    metadataExtensions: ensureArray(trans.METADATAEXTENSION).map(
-      mapMetadataExtension
-    ),
-  };
-}
-
-function mapInstance(instance: IInstance): IMappedInstance {
-  return {
-    name: instance.NAME,
-    type: instance.TYPE,
-    transformationName: instance.TRANSFORMATION_NAME,
-    transformationType: instance.TRANSFORMATION_TYPE,
-    description: instance.DESCRIPTION,
-    associatedSourceInstanceName: instance.ASSOCIATED_SOURCE_INSTANCE?.NAME,
-    attributes: ensureArray(instance.TABLEATTRIBUTE).map(mapAttribute),
-  };
-}
-
-function mapConnector(connector: IConnector): IMappedConnector {
-  return {
-    fromField: connector.FROMFIELD,
-    fromInstance: connector.FROMINSTANCE,
-    fromInstanceType: connector.FROMINSTANCETYPE,
-    toField: connector.TOFIELD,
-    toInstance: connector.TOINSTANCE,
-    toInstanceType: connector.TOINSTANCETYPE,
-  };
-}
-
-function mapTargetLoadOrder(tlo: ITargetLoadOrder): IMappedTargetLoadOrder {
-  return {
-    order: tlo.ORDER,
-    targetInstance: tlo.TARGETINSTANCE,
-  };
-}
-
-function mapMappingVariable(mv: IMappingVariable): IMappedMappingVariable {
-  return {
-    name: mv.NAME,
-    dataType: mv.DATATYPE,
-    isParam: mv.ISPARAM,
-    defaultValue: mv.DEFAULTVALUE,
-    precision: mv.PRECISION,
-    scale: mv.SCALE,
-    isExpressionVariable: mv.ISEXPRESSIONVARIABLE,
-    userDefined: mv.USERDEFINED,
-    description: mv.DESCRIPTION,
-  };
-}
-
-function mapMapping(mapping: IMapping): IMappedMapping {
-  return {
-    name: mapping.NAME,
-    isValid: mapping.ISVALID,
-    description: mapping.DESCRIPTION,
-    transformations: ensureArray(mapping.TRANSFORMATION).map(mapTransformation),
-    instances: ensureArray(mapping.INSTANCE).map(mapInstance),
-    connectors: ensureArray(mapping.CONNECTOR).map(mapConnector),
-    targetLoadOrders: ensureArray(mapping.TARGETLOADORDER).map(
-      mapTargetLoadOrder
-    ),
-    variables: ensureArray(mapping.MAPPINGVARIABLE).map(mapMappingVariable),
-  };
-}
-
-function mapValuePair(vp: IValuePair): IMappedValuePair {
-  return {
-    name: vp.NAME,
-    value: vp.VALUE,
-    execOrder: vp.EXECORDER,
-    reverseAssignment: vp.REVERSEASSIGNMENT,
-  };
-}
-
-function mapTask(task: ITask): IMappedTask {
-  return {
-    name: task.NAME,
-    type: task.TYPE,
-    description: task.DESCRIPTION,
-    reusable: task.REUSABLE,
-    versionNumber: task.VERSIONNUMBER,
-    attributes: ensureArray(task.ATTRIBUTE).map(mapAttribute),
-    valuePairs: ensureArray(task.VALUEPAIR).map(mapValuePair),
-  };
-}
-
-function mapTaskInstance(taskInst: ITaskInstance): IMappedTaskInstance {
-  return {
-    name: taskInst.NAME,
-    taskName: taskInst.TASKNAME,
-    taskType: taskInst.TASKTYPE,
-    isEnabled: taskInst.ISENABLED,
-    failParentIfFails: taskInst.FAIL_PARENT_IF_INSTANCE_FAILS,
-    failParentIfDidNotRun: taskInst.FAIL_PARENT_IF_INSTANCE_DID_NOT_RUN,
-    treatInputLinkAsAnd: taskInst.TREAT_INPUTLINK_AS_AND,
-    attributes: ensureArray(taskInst.ATTRIBUTE).map(mapAttribute),
-    description: taskInst.DESCRIPTION,
-    reusable: taskInst.REUSABLE,
-    decisionName: taskInst["Decision Name"], // Acceso directo al atributo del XML
-  };
-}
-
-function mapWorkflowLink(link: IWorkflowLink): IMappedWorkflowLink {
-  return {
-    fromTask: link.FROMTASK,
-    toTask: link.TOTASK,
-    condition: link.CONDITION,
-  };
-}
-
-function mapWorkflowVariable(
-  wfVar: IWorkflowVariable
-): IMappedWorkflowVariable {
-  return {
-    name: wfVar.NAME,
-    dataType: wfVar.DATATYPE,
-    userDefined: wfVar.USERDEFINED,
-    defaultValue: wfVar.DEFAULTVALUE,
-    isPersistent: wfVar.ISPERSISTENT,
-    description: wfVar.DESCRIPTION,
-    isNull: wfVar.ISNULL,
-  };
-}
-
-function mapScheduler(scheduler: IScheduler): IMappedScheduler {
-  return {
-    name: scheduler.NAME,
-    scheduleType: scheduler.SCHEDULEINFO?.SCHEDULETYPE || "UNKNOWN",
-    description: scheduler.DESCRIPTION,
-  };
-}
-
-function mapWorkflow(workflow: IWorkflow): IMappedWorkflow {
-  return {
-    name: workflow.NAME,
-    isValid: workflow.ISVALID,
-    isEnabled: workflow.ISENABLED,
-    description: workflow.DESCRIPTION,
-    serverName: workflow.SERVERNAME,
-    tasks: ensureArray(workflow.TASKINSTANCE).map(mapTaskInstance),
-    links: ensureArray(workflow.WORKFLOWLINK).map(mapWorkflowLink),
-    variables: ensureArray(workflow.WORKFLOWVARIABLE).map(mapWorkflowVariable),
-    attributes: ensureArray(workflow.ATTRIBUTE).map(mapAttribute),
-    scheduler: mapScheduler(workflow.SCHEDULER),
-  };
-}
-
-function mapSessTransformationInst(
-  stInst: ISessTransformationInst
-): IMappedSessTransformationInst {
-  return {
-    instanceName: stInst.SINSTANCENAME,
-    transformationName: stInst.TRANSFORMATIONNAME,
-    transformationType: stInst.TRANSFORMATIONTYPE,
-    pipeline: stInst.PIPELINE,
-    stage: stInst.STAGE,
-    isRepartitionPoint: stInst.ISREPARTITIONPOINT,
-    partitionType: stInst.PARTITIONTYPE,
-    attributes: ensureArray(stInst.ATTRIBUTE).map(mapAttribute),
-    partition: ensureArray(stInst.PARTITION).map((p) => ({
-      name: p.NAME,
-      description: p.DESCRIPTION,
-    })),
-  };
-}
-
-function mapConnectionReference(
-  connRef: IConnectionReference
-): IMappedConnectionReference {
-  return {
-    name: connRef.CNXREFNAME,
-    type: connRef.CONNECTIONTYPE,
-    variable: connRef.VARIABLE,
-    connectionName: connRef.CONNECTIONNAME,
-    connectionNumber: connRef.CONNECTIONNUMBER,
-    connectionSubtype: connRef.CONNECTIONSUBTYPE,
-  };
-}
-
-function mapSessionExtension(
-  sessExt: ISessionExtension
-): IMappedSessionExtension {
-  return {
-    name: sessExt.NAME,
-    instanceName: sessExt.SINSTANCENAME,
-    subType: sessExt.SUBTYPE,
-    transformationType: sessExt.TRANSFORMATIONTYPE,
-    type: sessExt.TYPE,
-    connectionReference: sessExt.CONNECTIONREFERENCE
-      ? mapConnectionReference(sessExt.CONNECTIONREFERENCE)
-      : undefined,
-    attributes: ensureArray(sessExt.ATTRIBUTE).map(mapAttribute),
-    dsqInstanceName: sessExt.DSQINSTNAME,
-    dsqInstanceType: sessExt.DSQINSTTYPE,
-  };
-}
-
-function mapSessionComponent(
-  sessComp: ISessionComponent
-): IMappedSessionComponent {
-  return {
-    refObjectName: sessComp.REFOBJECTNAME,
-    reusable: sessComp.REUSABLE,
-    type: sessComp.TYPE,
-  };
-}
-
-function mapSession(session: ISession): IMappedSession {
-  return {
-    name: session.NAME,
-    mappingName: session.MAPPINGNAME,
-    isValid: session.ISVALID,
-    description: session.DESCRIPTION,
-    reusable: session.REUSABLE,
-    versionNumber: session.VERSIONNUMBER,
-    sortOrder: session.SORTORDER,
-    transformationInstances: ensureArray(session.SESSTRANSFORMATIONINST).map(
-      mapSessTransformationInst
-    ),
-    sessionExtensions: ensureArray(session.SESSIONEXTENSION).map(
-      mapSessionExtension
-    ),
-    attributes: ensureArray(session.ATTRIBUTE).map(mapAttribute),
-    configReferenceName: session.CONFIGREFERENCE?.REFOBJECTNAME || "UNKNOWN",
-    sessionComponents: ensureArray(session.SESSIONCOMPONENT).map(
-      mapSessionComponent
-    ),
-  };
-}
-
-function mapConfig(config: IConfig): IMappedConfig {
-  return {
-    name: config.NAME,
-    isDefault: config.ISDEFAULT,
-    description: config.DESCRIPTION,
-    versionNumber: config.VERSIONNUMBER,
-    attributes: ensureArray(config.ATTRIBUTE).map(mapAttribute),
-  };
-}
-
-// --- Lógica principal de extracción ---
-
-fs.readFile(
-  xmlFilePath,
-  "utf8",
-  (err: NodeJS.ErrnoException | null, data: string) => {
-    if (err) {
-      console.error("Error reading XML file:", err);
-      return;
-    }
-
-    // Configuración de xml2js:
-    // - explicitArray: false -> Los elementos hijos únicos no se envuelven en un array.
-    // - mergeAttrs: true    -> Los atributos XML se fusionan como propiedades directas del objeto.
-    parseString(
-      data,
-      { explicitArray: false, mergeAttrs: true },
-      (err: Error | null, result: IExtractionResult) => {
-        if (err) {
-          console.error("Error parsing XML:", err);
-          return;
-        }
-
-        const powerMart = result.POWERMART;
-        const folder = powerMart.REPOSITORY.FOLDER;
-
-        const mappedSources = ensureArray(folder.SOURCE).map(mapSource);
-        const mappedTargets = ensureArray(folder.TARGET).map(mapTarget);
-        const mappedMappings = ensureArray(folder.MAPPING).map(mapMapping);
-        const mappedSessions = ensureArray(folder.SESSION).map(mapSession);
-        // Workflow es singular en este XML, por eso se maneja con un condicional
-        const mappedWorkflows = folder.WORKFLOW
-          ? [mapWorkflow(folder.WORKFLOW)]
-          : [];
-        const mappedConfigs = ensureArray(folder.CONFIG).map(mapConfig);
-        const mappedReusableTasks = ensureArray(folder.TASK).map(mapTask); // Tareas directamente bajo FOLDER
-
-        let allTasksInstances: IMappedTaskInstance[] = [];
-        mappedWorkflows.forEach((wf) => {
-          allTasksInstances = allTasksInstances.concat(wf.tasks);
-        });
-
-        const extractionResult: IFlatExtractionData = {
-          repositoryName: powerMart.REPOSITORY.NAME,
-          folderName: folder.NAME,
-          summary: {
-            totalWorkflows: mappedWorkflows.length,
-            totalSessions: mappedSessions.length,
-            totalMappings: mappedMappings.length,
-            totalSources: mappedSources.length,
-            totalTargets: mappedTargets.length,
-            totalTransformations: mappedMappings.reduce(
-              (acc, m) => acc + (m.transformations?.length || 0),
-              0
-            ),
-          },
-          mappings: mappedMappings,
-          workflows: mappedWorkflows,
-          sources: mappedSources,
-          targets: mappedTargets,
-          sessions: mappedSessions,
-          configs: mappedConfigs,
-          reusableTasks: mappedReusableTasks,
-          allTasksInstances: allTasksInstances, // Todas las instancias de tareas de todos los workflows
-        };
-
-        console.log(JSON.stringify(extractionResult, null, 2));
-
-        // Guardar en archivo
-        fs.writeFileSync(
-          outputJsonFilePath,
-          JSON.stringify(extractionResult, null, 2)
-        );
-        console.log(`Extraction data saved to ${outputJsonFilePath}`);
-      }
-    );
-  }
-);
-
-
---------------------------------------------------------------------------------
-
-/* src/index.css */
-
-@import "tailwindcss";
 
 
 --------------------------------------------------------------------------------
@@ -1151,7 +316,7 @@ fs.readFile(
 
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import './index.css'
+import './styles/index.css' // Actualiza la ruta a los estilos
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(
@@ -1177,13 +342,196 @@ createRoot(document.getElementById('root')!).render(
 
 --------------------------------------------------------------------------------
 
+// src/components/layout/Header.tsx
+
+import type { Dispatch, SetStateAction } from "react";
+
+interface HeaderProps {
+  searchTerm: string;
+  setSearchTerm: Dispatch<SetStateAction<string>>;
+}
+
+export const Header = ({ searchTerm, setSearchTerm }: HeaderProps) => (
+  <header className="bg-white shadow-md p-4 flex justify-between items-center">
+    <h1 className="text-2xl font-bold text-gray-800">Dashboard ETL</h1>
+    <div className="flex items-center space-x-4">
+      <input
+        type="text"
+        placeholder="Buscar..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="px-3 py-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      <div className="flex items-center space-x-2">
+        <span>Usuario</span>
+        <div className="w-8 h-8 bg-blue-500 rounded-full"></div>
+      </div>
+    </div>
+  </header>
+);
+
+
+--------------------------------------------------------------------------------
+
+// src/components/layout/MainLayout.tsx
+
+import { useState } from "react";
+import { Outlet, useOutletContext } from "react-router-dom";
+import { useEtlData } from "../../hooks/useEtlData";
+import { Loader } from "../ui/Loader";
+import { Header } from "./Header";
+import { Sidebar } from "./Sidebar";
+
+// Contexto para pasar datos y estado a las páginas anidadas
+type AppContextType = {
+  data: ReturnType<typeof useEtlData>["data"];
+  searchTerm: string;
+};
+
+export const MainLayout = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const { data, loading, error } = useEtlData();
+
+  if (loading) return <Loader />;
+  if (error) return <div className="p-6">Error: {error}</div>;
+  if (!data) return <div className="p-6">No se encontraron datos.</div>;
+
+  return (
+    <div className="flex h-screen bg-gray-100">
+      <Sidebar />
+      <div className="flex-1 flex flex-col">
+        <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+        <main className="flex-1 overflow-y-auto p-6">
+          <Outlet context={{ data, searchTerm } satisfies AppContextType} />
+        </main>
+      </div>
+    </div>
+  );
+};
+
+// Hook para acceder fácilmente al contexto en las páginas
+export function useAppData() {
+  return useOutletContext<AppContextType>();
+}
+
+
+--------------------------------------------------------------------------------
+
+// src/components/layout/Sidebar.tsx
+
+import { NavLink } from "react-router-dom";
+const sections = [
+  { path: "/", name: "Dashboard", icon: "🏠" },
+  { path: "/mappings", name: "Mappings", icon: "🔄" },
+  { path: "/workflows", name: "Workflows", icon: "⚙️" },
+  { path: "/sessions", name: "Sessions", icon: "📊" },
+  { path: "/sources", name: "Sources", icon: "📥" },
+  { path: "/targets", name: "Targets", icon: "📤" },
+];
+export const Sidebar = () => (
+  <aside className="w-64 bg-gradient-to-b from-gray-800 to-gray-900 text-white shadow-lg">
+    <div className="p-4">
+      <h1 className="text-xl font-bold">PowerCenter ETL</h1>
+    </div>
+    <nav className="mt-4">
+      {sections.map((section) => (
+        <NavLink
+          key={section.name}
+          to={section.path}
+          className={({ isActive }) =>
+            `w-full text-left px-4 py-2 block hover:bg-gray-700 transition-colors ${
+              isActive ? "bg-gray-700" : ""
+            }`
+          }
+        >
+          <span className="mr-2">{section.icon}</span>
+          {section.name}
+        </NavLink>
+      ))}
+    </nav>
+  </aside>
+);
+
+
+--------------------------------------------------------------------------------
+
+// src/components/ui/Card.tsx
+
+import type { ReactNode } from "react";
+
+interface CardProps {
+  title: string;
+  titleClassName?: string;
+  children: ReactNode;
+}
+
+export const Card = ({
+  title,
+  titleClassName = "text-blue-600",
+  children,
+}: CardProps) => {
+  return (
+    <div className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+      <h3 className={`text-lg font-semibold ${titleClassName}`}>{title}</h3>
+      <div className="text-gray-600 mt-2 space-y-1">{children}</div>
+    </div>
+  );
+};
+
+
+--------------------------------------------------------------------------------
+
+// src/components/ui/Loader.tsx
+
+export const Loader = () => (
+  <div className="flex justify-center items-center h-screen">
+    <div className="text-xl font-semibold">Cargando datos...</div>
+  </div>
+);
+
+
+--------------------------------------------------------------------------------
+
+// src/hooks/useEtlData.ts
+
+import { useState, useEffect } from "react";
+import type { IFlatExtractionData } from "../interfaces";
+import { getEtlData } from "../services/etlService";
+
+export const useEtlData = () => {
+  const [data, setData] = useState<IFlatExtractionData | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const jsonData = await getEtlData();
+        setData(jsonData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An unknown error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  return { data, loading, error };
+};
+
+
+--------------------------------------------------------------------------------
+
 // src/interfaces/index.ts
 
-export * from './mapping.interface.ts';
-export * from './multi-workflow.interface.ts';
-export * from './powermart.interface.ts';
-export * from './sessiones.interface.ts';
-export * from './workflow.interface.ts';
+export * from "./mapping.interface.js";
+export * from "./multi-workflow.interface.js";
+export * from "./powermart.interface.js";
+export * from "./sessiones.interface.js";
+export * from "./workflow.interface.js";
 
 
 --------------------------------------------------------------------------------
@@ -1752,9 +1100,9 @@ export interface IMappedValuePair {
 // src/interfaces/powermart.interface.ts
 
 // src/interfaces/powermart.interface.ts
-import type { IMapping, ITableAttribute } from './mapping.interface';
-import type { ISession } from './sessiones.interface';
-import type { IWorkflow, IConfig, ITask } from './workflow.interface';
+import type { IMapping, ITableAttribute } from "./mapping.interface";
+import type { ISession } from "./sessiones.interface";
+import type { IConfig, ITask, IWorkflow } from "./workflow.interface";
 
 /**
  * Representa el nodo raíz del documento XML de PowerCenter.
@@ -1809,22 +1157,22 @@ export interface IField {
   KEYTYPE: "PRIMARY KEY" | "NOT A KEY" | "PRIMARY FOREIGN KEY" | "FOREIGN KEY";
   NULLABLE: "NULL" | "NOTNULL";
   PRECISION: string; // Ej. "19", "200"
-  SCALE: string;     // Ej. "0", "9"
+  SCALE: string; // Ej. "0", "9"
   DESCRIPTION?: string;
   BUSINESSNAME?: string;
   FIELDNUMBER: string;
   PICTURETEXT?: string;
   // Atributos específicos para SOURCEFIELD (se hacen opcionales para reutilizar en TARGETFIELD)
   FIELDPROPERTY?: string; // Ej. "0"
-  FIELDTYPE?: string;     // Ej. "ELEMITEM"
-  HIDDEN?: "YES" | "NO";  // Ej. "NO"
-  LENGTH?: string;        // Ej. "19", "0", "10"
-  LEVEL?: string;         // Ej. "0"
-  OCCURS?: string;        // Ej. "0"
-  OFFSET?: string;        // Ej. "0", "19"
+  FIELDTYPE?: string; // Ej. "ELEMITEM"
+  HIDDEN?: "YES" | "NO"; // Ej. "NO"
+  LENGTH?: string; // Ej. "19", "0", "10"
+  LEVEL?: string; // Ej. "0"
+  OCCURS?: string; // Ej. "0"
+  OFFSET?: string; // Ej. "0", "19"
   PHYSICALLENGTH?: string; // Ej. "19", "200"
   PHYSICALOFFSET?: string; // Ej. "0", "19"
-  USAGE_FLAGS?: string;   // Ej. ""
+  USAGE_FLAGS?: string; // Ej. ""
 }
 
 /**
@@ -1856,7 +1204,7 @@ export interface ITarget {
   VERSIONNUMBER: string;
   DESCRIPTION?: string;
   BUSINESSNAME?: string; // Presente pero vacío en el ejemplo
-  CONSTRAINT?: string;   // Presente pero vacío en el ejemplo
+  CONSTRAINT?: string; // Presente pero vacío en el ejemplo
   TABLEOPTIONS?: string; // Presente pero vacío en el ejemplo
   TARGETFIELD?: IField[];
   TABLEATTRIBUTE?: ITableAttribute[]; // Los destinos pueden tener atributos como Pre/Post SQL
@@ -1892,7 +1240,7 @@ export interface IFlatFile {
 // src/interfaces/sessiones.interface.ts
 
 // src/interfaces/sessiones.interface.ts
-import type { ITableAttribute } from './mapping.interface';
+import type { ITableAttribute } from "./mapping.interface";
 
 /**
  * Representa una sesión, que es la instancia ejecutable de un mapeo.
@@ -1992,7 +1340,7 @@ export interface ISessionComponent {
 // src/interfaces/workflow.interface.ts
 
 // src/interfaces/workflow.interface.ts
-import type { ITableAttribute } from './mapping.interface';
+import type { ITableAttribute } from "./mapping.interface";
 
 /**
  * Representa el flujo de trabajo (Workflow) que orquesta la ejecución de tareas.
@@ -2120,6 +1468,1029 @@ export interface IConfig {
   DESCRIPTION?: string;
   ATTRIBUTE?: ITableAttribute[];
 }
+
+
+--------------------------------------------------------------------------------
+
+// src/lib/extractor.ts
+
+import * as fs from "fs/promises";
+import * as path from "path";
+import { parseStringPromise } from "xml2js";
+import type {
+  IExtractionResult,
+  IFlatExtractionData,
+  IMappedTaskInstance,
+} from "../interfaces/index";
+
+import {
+  ensureArray,
+  mapConfig,
+  mapMapping,
+  mapSession,
+  mapSource,
+  mapTarget,
+  mapTask,
+  mapWorkflow,
+} from "./mappingHelpers.js";
+
+const xmlInputDir = path.join(process.cwd(), "xml_inputs");
+const outputJsonFilePath = path.join(process.cwd(), "public/extraction.json");
+
+/**
+ * Función principal asíncrona que orquesta el proceso de extracción.
+ * Lee, procesa y combina múltiples archivos XML en un único JSON.
+ */
+async function runExtraction() {
+  try {
+    // 1. Asegurarse de que el directorio de salida exista
+    await fs.mkdir(path.dirname(outputJsonFilePath), { recursive: true });
+
+    // 2. Leer todos los nombres de archivo del directorio de entrada
+    const files = await fs.readdir(xmlInputDir);
+    const xmlFiles = files.filter(
+      (file) => path.extname(file).toLowerCase() === ".xml"
+    );
+
+    if (xmlFiles.length === 0) {
+      console.log(
+        `No se encontraron archivos XML en el directorio: ${xmlInputDir}`
+      );
+      // Crear un archivo JSON vacío para evitar que la aplicación falle
+      await fs.writeFile(
+        outputJsonFilePath,
+        JSON.stringify(
+          {
+            repositoryName: "N/A",
+            folderName: "N/A",
+            summary: {
+              totalWorkflows: 0,
+              totalSessions: 0,
+              totalMappings: 0,
+              totalSources: 0,
+              totalTargets: 0,
+              totalTransformations: 0,
+            },
+            mappings: [],
+            workflows: [],
+            sources: [],
+            targets: [],
+            sessions: [],
+            configs: [],
+            reusableTasks: [],
+            allTasksInstances: [],
+          },
+          null,
+          2
+        )
+      );
+      console.log(
+        `Archivo 'extraction.json' vacío creado en ${outputJsonFilePath}`
+      );
+      return;
+    }
+    console.log(`Archivos XML encontrados: ${xmlFiles.join(", ")}`);
+
+    // 3. Procesar cada archivo XML en paralelo para mayor eficiencia
+    const allResults = await Promise.all(
+      xmlFiles.map(async (fileName) => {
+        const filePath = path.join(xmlInputDir, fileName);
+        const xmlData = await fs.readFile(filePath, "utf8");
+        const result: IExtractionResult = await parseStringPromise(xmlData, {
+          explicitArray: false,
+          mergeAttrs: true,
+        });
+        return result;
+      })
+    );
+
+    // 4. Inicializar la estructura de datos final
+    const finalExtraction: IFlatExtractionData = {
+      repositoryName: "",
+      folderName: "",
+      summary: {
+        totalWorkflows: 0,
+        totalSessions: 0,
+        totalMappings: 0,
+        totalSources: 0,
+        totalTargets: 0,
+        totalTransformations: 0,
+      },
+      mappings: [],
+      workflows: [],
+      sources: [],
+      targets: [],
+      sessions: [],
+      configs: [],
+      reusableTasks: [],
+      allTasksInstances: [],
+    };
+
+    // 5. Iterar y fusionar los resultados
+    allResults.forEach((result, index) => {
+      const powerMart = result.POWERMART;
+      const folder = powerMart.REPOSITORY.FOLDER;
+
+      if (index === 0) {
+        finalExtraction.repositoryName = powerMart.REPOSITORY.NAME;
+        finalExtraction.folderName = folder.NAME;
+      }
+
+      finalExtraction.sources.push(
+        ...ensureArray(folder.SOURCE).map(mapSource)
+      );
+      finalExtraction.targets.push(
+        ...ensureArray(folder.TARGET).map(mapTarget)
+      );
+      finalExtraction.mappings.push(
+        ...ensureArray(folder.MAPPING).map(mapMapping)
+      );
+      finalExtraction.sessions.push(
+        ...ensureArray(folder.SESSION).map(mapSession)
+      );
+      finalExtraction.workflows.push(
+        ...ensureArray(folder.WORKFLOW).map(mapWorkflow)
+      );
+      finalExtraction.configs.push(
+        ...ensureArray(folder.CONFIG).map(mapConfig)
+      );
+      finalExtraction.reusableTasks.push(
+        ...ensureArray(folder.TASK).map(mapTask)
+      );
+    });
+
+    // 6. Recalcular el resumen final
+    finalExtraction.summary = {
+      totalWorkflows: finalExtraction.workflows.length,
+      totalSessions: finalExtraction.sessions.length,
+      totalMappings: finalExtraction.mappings.length,
+      totalSources: finalExtraction.sources.length,
+      totalTargets: finalExtraction.targets.length,
+      totalTransformations: finalExtraction.mappings.reduce(
+        (acc, m) => acc + (m.transformations?.length || 0),
+        0
+      ),
+    };
+
+    // 7. Consolidar todas las instancias de tareas
+    let allTasksInstances: IMappedTaskInstance[] = [];
+    finalExtraction.workflows.forEach((wf) => {
+      allTasksInstances.push(...wf.tasks);
+    });
+    finalExtraction.allTasksInstances = allTasksInstances;
+
+    // 8. Guardar el resultado
+    await fs.writeFile(
+      outputJsonFilePath,
+      JSON.stringify(finalExtraction, null, 2)
+    );
+
+    console.log(
+      `\nExtracción completada. Datos combinados guardados en ${outputJsonFilePath}`
+    );
+    console.log("Resumen final:", finalExtraction.summary);
+  } catch (err) {
+    if (
+      (err as NodeJS.ErrnoException).code === "ENOENT" &&
+      (err as NodeJS.ErrnoException).path === xmlInputDir
+    ) {
+      console.error(
+        `Error: El directorio de entrada '${xmlInputDir}' no existe. Por favor, créalo y añade tus archivos XML.`
+      );
+    } else {
+      console.error("Ocurrió un error durante el proceso de extracción:", err);
+    }
+  }
+}
+
+runExtraction();
+
+
+--------------------------------------------------------------------------------
+
+// src/lib/mappingHelpers.js
+
+// src/lib/mappingHelpers.ts
+
+// Importa todas las interfaces necesarias desde el directorio de interfaces.
+// Estas interfaces definen la forma de los datos tanto del XML original como de la estructura mapeada.
+import type {
+  IConfig,
+  IConnectionReference,
+  IConnector,
+  IField,
+  IInstance,
+  IMappedAttribute,
+  IMappedConfig,
+  IMappedConnectionReference,
+  IMappedConnector,
+  IMappedField,
+  IMappedInstance,
+  IMappedMapping,
+  IMappedMappingVariable,
+  IMappedMetadataExtension,
+  IMappedScheduler,
+  IMappedSession,
+  IMappedSessionComponent,
+  IMappedSessionExtension,
+  IMappedSessTransformationInst,
+  IMappedSource,
+  IMappedTarget,
+  IMappedTargetLoadOrder,
+  IMappedTask,
+  IMappedTaskInstance,
+  IMappedTransformation,
+  IMappedTransformField,
+  IMappedValuePair,
+  IMappedWorkflow,
+  IMappedWorkflowLink,
+  IMappedWorkflowVariable,
+  IMapping,
+  IMappingVariable,
+  IMetaDataExtension,
+  IScheduler,
+  ISession,
+  ISessionComponent,
+  ISessionExtension,
+  ISessTransformationInst,
+  ISource,
+  ITableAttribute,
+  ITarget,
+  ITargetLoadOrder,
+  ITask,
+  ITaskInstance,
+  ITransformation,
+  ITransformField,
+  IValuePair,
+  IWorkflow,
+  IWorkflowLink,
+  IWorkflowVariable,
+} from "../interfaces/index.js";
+
+/**
+ * Helper para asegurar que un elemento siempre se trate como un array.
+ * @param item El elemento a normalizar.
+ * @returns Un array de elementos.
+ */
+export function ensureArray<T>(item: T | T[] | undefined | null): T[] {
+  if (item === undefined || item === null) {
+    return [];
+  }
+  return Array.isArray(item) ? item : [item];
+}
+
+export function mapAttribute(attr: ITableAttribute): IMappedAttribute {
+  return {
+    name: attr.NAME,
+    value: attr.VALUE,
+  };
+}
+
+export function mapField(field: IField): IMappedField {
+  return {
+    name: field.NAME,
+    dataType: field.DATATYPE,
+    keyType: field.KEYTYPE,
+    nullable: field.NULLABLE,
+    precision: field.PRECISION,
+    scale: field.SCALE,
+    description: field.DESCRIPTION,
+    length: field.LENGTH,
+    physicalLength: field.PHYSICALLENGTH,
+    fieldProperty: field.FIELDPROPERTY,
+    fieldType: field.FIELDTYPE,
+    hidden: field.HIDDEN,
+    level: field.LEVEL,
+    occurs: field.OCCURS,
+    offset: field.OFFSET,
+    usage_flags: field.USAGE_FLAGS,
+  };
+}
+
+export function mapSource(source: ISource): IMappedSource {
+  return {
+    name: source.NAME,
+    databaseType: source.DATABASETYPE,
+    ownerName: source.OWNERNAME,
+    description: source.DESCRIPTION,
+    fields: ensureArray(source.SOURCEFIELD).map(mapField),
+    isFlatFile: !!source.FLATFILE,
+    attributes: ensureArray(source.TABLEATTRIBUTE).map(mapAttribute),
+  };
+}
+
+export function mapTarget(target: ITarget): IMappedTarget {
+  return {
+    name: target.NAME,
+    databaseType: target.DATABASETYPE,
+    description: target.DESCRIPTION,
+    fields: ensureArray(target.TARGETFIELD).map(mapField),
+    attributes: ensureArray(target.TABLEATTRIBUTE).map(mapAttribute),
+  };
+}
+
+export function mapTransformField(
+  field: ITransformField
+): IMappedTransformField {
+  return {
+    name: field.NAME,
+    portType: field.PORTTYPE,
+    dataType: field.DATATYPE,
+    precision: field.PRECISION,
+    scale: field.SCALE,
+    expression: field.EXPRESSION,
+    expressionType: field.EXPRESSIONTYPE,
+    description: field.DESCRIPTION,
+    isSortKey: field.ISSORTKEY,
+    sortDirection: field.SORTDIRECTION,
+    defaultValue: field.DEFAULTVALUE,
+    pictureText: field.PICTURETEXT,
+  };
+}
+
+export function mapMetadataExtension(
+  ext: IMetaDataExtension
+): IMappedMetadataExtension {
+  return {
+    name: ext.NAME,
+    value: ext.VALUE,
+    dataType: ext.DATATYPE,
+    description: ext.DESCRIPTION,
+    vendorName: ext.VENDORNAME,
+    domainName: ext.DOMAINNAME,
+    isClientEditable: ext.ISCLIENTEDITABLE,
+    isClientVisible: ext.ISCLIENTVISIBLE,
+    isReusable: ext.ISREUSABLE,
+    isShareRead: ext.ISSHAREREAD,
+    isShareWrite: ext.ISSHAREWRITE,
+    maxLength: ext.MAXLENGTH,
+  };
+}
+
+export function mapTransformation(
+  trans: ITransformation
+): IMappedTransformation {
+  return {
+    name: trans.NAME,
+    type: trans.TYPE,
+    description: trans.DESCRIPTION,
+    reusable: trans.REUSABLE,
+    fields: ensureArray(trans.TRANSFORMFIELD).map(mapTransformField),
+    attributes: ensureArray(trans.TABLEATTRIBUTE).map(mapAttribute),
+    metadataExtensions: ensureArray(trans.METADATAEXTENSION).map(
+      mapMetadataExtension
+    ),
+  };
+}
+
+export function mapInstance(instance: IInstance): IMappedInstance {
+  return {
+    name: instance.NAME,
+    type: instance.TYPE,
+    transformationName: instance.TRANSFORMATION_NAME,
+    transformationType: instance.TRANSFORMATION_TYPE,
+    description: instance.DESCRIPTION,
+    associatedSourceInstanceName: instance.ASSOCIATED_SOURCE_INSTANCE?.NAME,
+    attributes: ensureArray(instance.TABLEATTRIBUTE).map(mapAttribute),
+  };
+}
+
+export function mapConnector(connector: IConnector): IMappedConnector {
+  return {
+    fromField: connector.FROMFIELD,
+    fromInstance: connector.FROMINSTANCE,
+    fromInstanceType: connector.FROMINSTANCETYPE,
+    toField: connector.TOFIELD,
+    toInstance: connector.TOINSTANCE,
+    toInstanceType: connector.TOINSTANCETYPE,
+  };
+}
+
+export function mapTargetLoadOrder(
+  tlo: ITargetLoadOrder
+): IMappedTargetLoadOrder {
+  return {
+    order: tlo.ORDER,
+    targetInstance: tlo.TARGETINSTANCE,
+  };
+}
+
+export function mapMappingVariable(
+  mv: IMappingVariable
+): IMappedMappingVariable {
+  return {
+    name: mv.NAME,
+    dataType: mv.DATATYPE,
+    isParam: mv.ISPARAM,
+    defaultValue: mv.DEFAULTVALUE,
+    precision: mv.PRECISION,
+    scale: mv.SCALE,
+    isExpressionVariable: mv.ISEXPRESSIONVARIABLE,
+    userDefined: mv.USERDEFINED,
+    description: mv.DESCRIPTION,
+  };
+}
+
+export function mapMapping(mapping: IMapping): IMappedMapping {
+  return {
+    name: mapping.NAME,
+    isValid: mapping.ISVALID,
+    description: mapping.DESCRIPTION,
+    transformations: ensureArray(mapping.TRANSFORMATION).map(mapTransformation),
+    instances: ensureArray(mapping.INSTANCE).map(mapInstance),
+    connectors: ensureArray(mapping.CONNECTOR).map(mapConnector),
+    targetLoadOrders: ensureArray(mapping.TARGETLOADORDER).map(
+      mapTargetLoadOrder
+    ),
+    variables: ensureArray(mapping.MAPPINGVARIABLE).map(mapMappingVariable),
+  };
+}
+
+export function mapValuePair(vp: IValuePair): IMappedValuePair {
+  return {
+    name: vp.NAME,
+    value: vp.VALUE,
+    execOrder: vp.EXECORDER,
+    reverseAssignment: vp.REVERSEASSIGNMENT,
+  };
+}
+
+export function mapTask(task: ITask): IMappedTask {
+  return {
+    name: task.NAME,
+    type: task.TYPE,
+    description: task.DESCRIPTION,
+    reusable: task.REUSABLE,
+    versionNumber: task.VERSIONNUMBER,
+    attributes: ensureArray(task.ATTRIBUTE).map(mapAttribute),
+    valuePairs: ensureArray(task.VALUEPAIR).map(mapValuePair),
+  };
+}
+
+export function mapTaskInstance(taskInst: ITaskInstance): IMappedTaskInstance {
+  return {
+    name: taskInst.NAME,
+    taskName: taskInst.TASKNAME,
+    taskType: taskInst.TASKTYPE,
+    isEnabled: taskInst.ISENABLED,
+    failParentIfFails: taskInst.FAIL_PARENT_IF_INSTANCE_FAILS,
+    failParentIfDidNotRun: taskInst.FAIL_PARENT_IF_INSTANCE_DID_NOT_RUN,
+    treatInputLinkAsAnd: taskInst.TREAT_INPUTLINK_AS_AND,
+    attributes: ensureArray(taskInst.ATTRIBUTE).map(mapAttribute),
+    description: taskInst.DESCRIPTION,
+    reusable: taskInst.REUSABLE,
+    decisionName: taskInst["Decision Name"],
+  };
+}
+
+export function mapWorkflowLink(link: IWorkflowLink): IMappedWorkflowLink {
+  return {
+    fromTask: link.FROMTASK,
+    toTask: link.TOTASK,
+    condition: link.CONDITION,
+  };
+}
+
+export function mapWorkflowVariable(
+  wfVar: IWorkflowVariable
+): IMappedWorkflowVariable {
+  return {
+    name: wfVar.NAME,
+    dataType: wfVar.DATATYPE,
+    userDefined: wfVar.USERDEFINED,
+    defaultValue: wfVar.DEFAULTVALUE,
+    isPersistent: wfVar.ISPERSISTENT,
+    description: wfVar.DESCRIPTION,
+    isNull: wfVar.ISNULL,
+  };
+}
+
+export function mapScheduler(scheduler: IScheduler): IMappedScheduler {
+  return {
+    name: scheduler.NAME,
+    scheduleType: scheduler.SCHEDULEINFO?.SCHEDULETYPE || "UNKNOWN",
+    description: scheduler.DESCRIPTION,
+  };
+}
+
+export function mapWorkflow(workflow: IWorkflow): IMappedWorkflow {
+  return {
+    name: workflow.NAME,
+    isValid: workflow.ISVALID,
+    isEnabled: workflow.ISENABLED,
+    description: workflow.DESCRIPTION,
+    serverName: workflow.SERVERNAME,
+    tasks: ensureArray(workflow.TASKINSTANCE).map(mapTaskInstance),
+    links: ensureArray(workflow.WORKFLOWLINK).map(mapWorkflowLink),
+    variables: ensureArray(workflow.WORKFLOWVARIABLE).map(mapWorkflowVariable),
+    attributes: ensureArray(workflow.ATTRIBUTE).map(mapAttribute),
+    scheduler: mapScheduler(workflow.SCHEDULER),
+  };
+}
+
+export function mapSessTransformationInst(
+  stInst: ISessTransformationInst
+): IMappedSessTransformationInst {
+  return {
+    instanceName: stInst.SINSTANCENAME,
+    transformationName: stInst.TRANSFORMATIONNAME,
+    transformationType: stInst.TRANSFORMATIONTYPE,
+    pipeline: stInst.PIPELINE,
+    stage: stInst.STAGE,
+    isRepartitionPoint: stInst.ISREPARTITIONPOINT,
+    partitionType: stInst.PARTITIONTYPE,
+    attributes: ensureArray(stInst.ATTRIBUTE).map(mapAttribute),
+    partition: ensureArray(stInst.PARTITION).map((p) => ({
+      name: p.NAME,
+      description: p.DESCRIPTION,
+    })),
+  };
+}
+
+export function mapConnectionReference(
+  connRef: IConnectionReference
+): IMappedConnectionReference {
+  return {
+    name: connRef.CNXREFNAME,
+    type: connRef.CONNECTIONTYPE,
+    variable: connRef.VARIABLE,
+    connectionName: connRef.CONNECTIONNAME,
+    connectionNumber: connRef.CONNECTIONNUMBER,
+    connectionSubtype: connRef.CONNECTIONSUBTYPE,
+  };
+}
+
+export function mapSessionExtension(
+  sessExt: ISessionExtension
+): IMappedSessionExtension {
+  return {
+    name: sessExt.NAME,
+    instanceName: sessExt.SINSTANCENAME,
+    subType: sessExt.SUBTYPE,
+    transformationType: sessExt.TRANSFORMATIONTYPE,
+    type: sessExt.TYPE,
+    connectionReference: sessExt.CONNECTIONREFERENCE
+      ? mapConnectionReference(sessExt.CONNECTIONREFERENCE)
+      : undefined,
+    attributes: ensureArray(sessExt.ATTRIBUTE).map(mapAttribute),
+    dsqInstanceName: sessExt.DSQINSTNAME,
+    dsqInstanceType: sessExt.DSQINSTTYPE,
+  };
+}
+
+export function mapSessionComponent(
+  sessComp: ISessionComponent
+): IMappedSessionComponent {
+  return {
+    refObjectName: sessComp.REFOBJECTNAME,
+    reusable: sessComp.REUSABLE,
+    type: sessComp.TYPE,
+  };
+}
+
+export function mapSession(session: ISession): IMappedSession {
+  return {
+    name: session.NAME,
+    mappingName: session.MAPPINGNAME,
+    isValid: session.ISVALID,
+    description: session.DESCRIPTION,
+    reusable: session.REUSABLE,
+    versionNumber: session.VERSIONNUMBER,
+    sortOrder: session.SORTORDER,
+    transformationInstances: ensureArray(session.SESSTRANSFORMATIONINST).map(
+      mapSessTransformationInst
+    ),
+    sessionExtensions: ensureArray(session.SESSIONEXTENSION).map(
+      mapSessionExtension
+    ),
+    attributes: ensureArray(session.ATTRIBUTE).map(mapAttribute),
+    configReferenceName: session.CONFIGREFERENCE?.REFOBJECTNAME || "UNKNOWN",
+    sessionComponents: ensureArray(session.SESSIONCOMPONENT).map(
+      mapSessionComponent
+    ),
+  };
+}
+
+export function mapConfig(config: IConfig): IMappedConfig {
+  return {
+    name: config.NAME,
+    isDefault: config.ISDEFAULT,
+    description: config.DESCRIPTION,
+    versionNumber: config.VERSIONNUMBER,
+    attributes: ensureArray(config.ATTRIBUTE).map(mapAttribute),
+  };
+}
+
+
+--------------------------------------------------------------------------------
+
+// src/pages/Dashboard.tsx
+
+import { useAppData } from "../components/layout/MainLayout";
+
+const Dashboard = () => {
+  const { data } = useAppData();
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-4">Dashboard ETL</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg shadow-lg">
+          <h3 className="text-lg font-semibold">Mappings</h3>
+          <p>{data?.summary.totalMappings} disponibles</p>
+        </div>
+        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-lg shadow-lg">
+          <h3 className="text-lg font-semibold">Workflows</h3>
+          <p>{data?.summary.totalWorkflows} disponibles</p>
+        </div>
+        <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-lg shadow-lg">
+          <h3 className="text-lg font-semibold">Sources</h3>
+          <p>{data?.summary.totalSources} disponibles</p>
+        </div>
+        <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-4 rounded-lg shadow-lg">
+          <h3 className="text-lg font-semibold">Targets</h3>
+          <p>{data?.summary.totalTargets} disponibles</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
+
+
+--------------------------------------------------------------------------------
+
+// src/pages/Mappings.tsx
+
+import { useAppData } from "../components/layout/MainLayout";
+import { Card } from "../components/ui/Card";
+
+const Mappings = () => {
+  const { data, searchTerm } = useAppData();
+
+  // Usamos optional chaining (?.) para evitar errores si data es null al inicio
+  const filteredMappings = data?.mappings?.filter((mapping) =>
+    mapping.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-4">Mappings</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredMappings && filteredMappings.length > 0 ? (
+          filteredMappings.map((mapping) => (
+            <Card
+              key={mapping.name}
+              title={mapping.name}
+              titleClassName="text-blue-600"
+            >
+              <p>Estado: {mapping.isValid}</p>
+              <p>Transformaciones: {mapping.transformations?.length || 0}</p>
+            </Card>
+          ))
+        ) : (
+          <p>No se encontraron mappings que coincidan con la búsqueda.</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Mappings;
+
+
+--------------------------------------------------------------------------------
+
+// src/pages/NotFound.tsx
+
+import { Link } from "react-router-dom";
+
+const NotFound = () => {
+  return (
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-100 text-center">
+      <h1 className="text-6xl font-bold text-gray-800">404</h1>
+      <h2 className="text-2xl font-semibold text-gray-600 mt-4">
+        Página no encontrada
+      </h2>
+      <p className="text-gray-500 mt-2">
+        Lo sentimos, la página que estás buscando no existe.
+      </p>
+      <Link
+        to="/"
+        className="mt-6 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+      >
+        Volver al Dashboard
+      </Link>
+    </div>
+  );
+};
+
+export default NotFound;
+
+
+--------------------------------------------------------------------------------
+
+// src/pages/Sessions.tsx
+
+import { useAppData } from "../components/layout/MainLayout";
+import { Card } from "../components/ui/Card";
+
+const Sessions = () => {
+  const { data, searchTerm } = useAppData();
+
+  const filteredSessions = data?.sessions?.filter((session) =>
+    session.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-4">Sessions</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredSessions && filteredSessions.length > 0 ? (
+          filteredSessions.map((session) => {
+            const mappedMapping = data?.mappings.find(
+              (m) => m.name === session.mappingName
+            );
+
+            const sourceNames =
+              mappedMapping?.instances
+                .filter((inst) => inst.type === "SOURCE")
+                .map((inst) => inst.name) || [];
+            const targetNames =
+              mappedMapping?.instances
+                .filter((inst) => inst.type === "TARGET")
+                .map((inst) => inst.name) || [];
+            const transformationNames =
+              mappedMapping?.instances
+                .filter((inst) => inst.type === "TRANSFORMATION")
+                .map((inst) => `${inst.name} (${inst.transformationType})`) ||
+              [];
+
+            return (
+              <Card
+                key={session.name}
+                title={session.name}
+                titleClassName="text-teal-600"
+              >
+                <p>Mapping: {session.mappingName}</p>
+                <p>Estado: {session.isValid}</p>
+                <div className="mt-2 text-sm">
+                  <p className="font-medium">
+                    Sources ({sourceNames.length}):{" "}
+                    {sourceNames.slice(0, 2).join(", ")}
+                    {sourceNames.length > 2 ? "..." : ""}
+                  </p>
+                  <p className="font-medium">
+                    Targets ({targetNames.length}):{" "}
+                    {targetNames.slice(0, 2).join(", ")}
+                    {targetNames.length > 2 ? "..." : ""}
+                  </p>
+                </div>
+              </Card>
+            );
+          })
+        ) : (
+          <p>No se encontraron sesiones que coincidan con la búsqueda.</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Sessions;
+
+
+--------------------------------------------------------------------------------
+
+// src/pages/Sources.tsx
+
+import { useAppData } from "../components/layout/MainLayout";
+import { Card } from "../components/ui/Card";
+
+const Sources = () => {
+  const { data, searchTerm } = useAppData();
+
+  const filteredSources = data?.sources?.filter((source) =>
+    source.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-4">Sources</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {filteredSources && filteredSources.length > 0 ? (
+          filteredSources.map((source) => (
+            <Card
+              key={source.name}
+              title={source.name}
+              titleClassName="text-purple-600"
+            >
+              <p>Tipo: {source.databaseType}</p>
+              <div className="mt-2">
+                <p className="font-medium">
+                  Campos ({source.fields?.length || 0}):
+                </p>
+                <div className="max-h-20 overflow-y-auto text-sm">
+                  {source.fields?.slice(0, 5).map((field, idx) => (
+                    <div key={idx} className="flex justify-between">
+                      <span>{field.name}</span>
+                      <span className="text-gray-500">{field.dataType}</span>
+                    </div>
+                  ))}
+                  {(source.fields?.length || 0) > 5 && (
+                    <p className="text-gray-400">
+                      ... y {source.fields.length - 5} más
+                    </p>
+                  )}
+                </div>
+              </div>
+            </Card>
+          ))
+        ) : (
+          <p>No se encontraron sources que coincidan con la búsqueda.</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Sources;
+
+
+--------------------------------------------------------------------------------
+
+// src/pages/Targets.tsx
+
+import { useAppData } from "../components/layout/MainLayout";
+import { Card } from "../components/ui/Card";
+
+const Targets = () => {
+  const { data, searchTerm } = useAppData();
+
+  const filteredTargets = data?.targets?.filter((target) =>
+    target.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-4">Targets</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {filteredTargets && filteredTargets.length > 0 ? (
+          filteredTargets.map((target) => (
+            <Card
+              key={target.name}
+              title={target.name}
+              titleClassName="text-red-600"
+            >
+              <p>Tipo: {target.databaseType}</p>
+              <div className="mt-2">
+                <p className="font-medium">
+                  Campos ({target.fields?.length || 0}):
+                </p>
+                <div className="max-h-20 overflow-y-auto text-sm">
+                  {target.fields?.slice(0, 5).map((field, idx) => (
+                    <div key={idx} className="flex justify-between">
+                      <span>{field.name}</span>
+                      <span className="text-gray-500">{field.dataType}</span>
+                    </div>
+                  ))}
+                  {(target.fields?.length || 0) > 5 && (
+                    <p className="text-gray-400">
+                      ... y {target.fields.length - 5} más
+                    </p>
+                  )}
+                </div>
+              </div>
+            </Card>
+          ))
+        ) : (
+          <p>No se encontraron targets que coincidan con la búsqueda.</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Targets;
+
+
+--------------------------------------------------------------------------------
+
+// src/pages/Workflows.tsx
+
+import { useAppData } from "../components/layout/MainLayout";
+import { Card } from "../components/ui/Card";
+
+const Workflows = () => {
+  const { data, searchTerm } = useAppData();
+
+  const filteredWorkflows = data?.workflows?.filter((workflow) =>
+    workflow.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-4">Workflows</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {filteredWorkflows && filteredWorkflows.length > 0 ? (
+          filteredWorkflows.map((workflow) => (
+            <Card
+              key={workflow.name}
+              title={workflow.name}
+              titleClassName="text-green-600"
+            >
+              <p>
+                Estado: {workflow.isValid} / {workflow.isEnabled}
+              </p>
+              <p>Tareas: {workflow.tasks?.length || 0}</p>
+            </Card>
+          ))
+        ) : (
+          <p>No se encontraron workflows que coincidan con la búsqueda.</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Workflows;
+
+
+--------------------------------------------------------------------------------
+
+// src/router/index.tsx
+
+import { createBrowserRouter } from "react-router-dom";
+import { MainLayout } from "../components/layout/MainLayout";
+
+// Eager loading: Importa todos los componentes de página directamente
+import Dashboard from "../pages/Dashboard";
+import Mappings from "../pages/Mappings";
+import NotFound from "../pages/NotFound";
+import Sessions from "../pages/Sessions";
+import Sources from "../pages/Sources";
+import Targets from "../pages/Targets";
+import Workflows from "../pages/Workflows";
+
+export const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <MainLayout />,
+    children: [
+      {
+        index: true,
+        element: <Dashboard />,
+      },
+      {
+        path: "mappings",
+        element: <Mappings />,
+      },
+      {
+        path: "workflows",
+        element: <Workflows />,
+      },
+      {
+        path: "sessions",
+        element: <Sessions />,
+      },
+      {
+        path: "sources",
+        element: <Sources />,
+      },
+      {
+        path: "targets",
+        element: <Targets />,
+      },
+    ],
+  },
+  {
+    path: "*",
+    element: <NotFound />,
+  },
+]);
+
+
+--------------------------------------------------------------------------------
+
+// src/services/etlService.ts
+
+import type { IFlatExtractionData } from "../interfaces";
+
+export const getEtlData = async (): Promise<IFlatExtractionData> => {
+  const response = await fetch("/extraction.json");
+  if (!response.ok) {
+    throw new Error("Network response was not ok");
+  }
+  return response.json();
+};
+
+
+--------------------------------------------------------------------------------
+
+/* src/styles/index.css */
+
+@import "tailwindcss";
 
 
 --------------------------------------------------------------------------------
