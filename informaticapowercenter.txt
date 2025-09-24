@@ -32,7 +32,7 @@
  - src/interfaces/sessiones.interface.ts
  - src/interfaces/workflow.interface.ts
  - src/lib/extractor.ts
- - src/lib/mappingHelpers.js
+ - src/lib/mappingHelpers.ts
  - src/pages/Dashboard.tsx
  - src/pages/Mappings.tsx
  - src/pages/NotFound.tsx
@@ -106,7 +106,7 @@ export default defineConfig([
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "extract": "node --loader ts-node/esm src/lib/extractor.ts"
+    "extract": "tsx src/lib/extractor.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.13",
@@ -126,7 +126,7 @@ export default defineConfig([
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.4.0",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.20.5",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.44.0",
     "vite": "^7.1.7"
@@ -271,7 +271,7 @@ export default defineConfig([
     "forceConsistentCasingInFileNames": true,
     "noEmit": true
   },
-  "include": ["vite.config.ts","src/lib/**/*.ts"]
+  "include": ["vite.config.ts","src/lib/**/*.ts", "src/lib/mappingHelpers.js"]
 }
 
 
@@ -527,11 +527,11 @@ export const useEtlData = () => {
 
 // src/interfaces/index.ts
 
-export * from "./mapping.interface.js";
-export * from "./multi-workflow.interface.js";
-export * from "./powermart.interface.js";
-export * from "./sessiones.interface.js";
-export * from "./workflow.interface.js";
+export * from "./mapping.interface.ts";
+export * from "./multi-workflow.interface.ts";
+export * from "./powermart.interface.ts";
+export * from "./sessiones.interface.ts";
+export * from "./workflow.interface.ts";
 
 
 --------------------------------------------------------------------------------
@@ -1492,7 +1492,7 @@ import {
   mapTarget,
   mapTask,
   mapWorkflow,
-} from "./mappingHelpers.js";
+} from "./mappingHelpers.ts";
 
 const xmlInputDir = path.join(process.cwd(), "xml_inputs");
 const outputJsonFilePath = path.join(process.cwd(), "public/extraction.json");
@@ -1668,7 +1668,7 @@ runExtraction();
 
 --------------------------------------------------------------------------------
 
-// src/lib/mappingHelpers.js
+// src/lib/mappingHelpers.ts
 
 // src/lib/mappingHelpers.ts
 
@@ -1725,7 +1725,7 @@ import type {
   IWorkflow,
   IWorkflowLink,
   IWorkflowVariable,
-} from "../interfaces/index.js";
+} from "../interfaces/index";
 
 /**
  * Helper para asegurar que un elemento siempre se trate como un array.
@@ -2245,6 +2245,11 @@ const Sessions = () => {
                     Targets ({targetNames.length}):{" "}
                     {targetNames.slice(0, 2).join(", ")}
                     {targetNames.length > 2 ? "..." : ""}
+                  </p>
+                  <p className="font-medium">
+                    Targets ({transformationNames.length}):{" "}
+                    {transformationNames.slice(0, 2).join(", ")}
+                    {transformationNames.length > 2 ? "..." : ""}
                   </p>
                 </div>
               </Card>

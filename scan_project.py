@@ -354,7 +354,8 @@ def make_banner(project_name: str, techs: Set[str], langs: Set[str]) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Concatena archivos de un proyecto respetando .gitignore.")
-    parser.add_argument("project_root", help="Ruta al directorio raíz del proyecto.")
+    # <--- MODIFICADO: Se añade nargs='?' para hacerlo opcional y default='.' para el valor por defecto.
+    parser.add_argument("project_root", nargs='?', default='.', help="Ruta al directorio raíz del proyecto (por defecto: directorio actual).")
     parser.add_argument("--output-dir", help="Directorio donde escribir el .txt (por defecto el raíz del proyecto).")
     parser.add_argument("--extra-ignore", action="append", default=None,
                         help="Patrón adicional a ignorar (sintaxis .gitignore). Puedes repetir la bandera.")

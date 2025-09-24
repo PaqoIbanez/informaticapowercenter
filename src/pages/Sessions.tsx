@@ -51,6 +51,11 @@ const Sessions = () => {
                     {targetNames.slice(0, 2).join(", ")}
                     {targetNames.length > 2 ? "..." : ""}
                   </p>
+                  <p className="font-medium">
+                    Targets ({transformationNames.length}):{" "}
+                    {transformationNames.slice(0, 2).join(", ")}
+                    {transformationNames.length > 2 ? "..." : ""}
+                  </p>
                 </div>
               </Card>
             );
