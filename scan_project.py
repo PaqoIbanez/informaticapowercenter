@@ -50,6 +50,7 @@ EXTRA_IGNORE_PATTERNS: List[str] = [
     ".gitignore",
     "wkf_03_DI_CARGA_INDICADORES.XML",
     "wkf_02_DI_CARGA_NARRATIVAS.XML",
+    "wkf_01_DI_CARGA_CATALOGOS.XML",
     "extraction.json"
 ]
 

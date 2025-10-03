@@ -3,11 +3,13 @@ import { MainLayout } from "../components/layout/MainLayout";
 
 // Eager loading: Importa todos los componentes de página directamente
 import Dashboard from "../pages/Dashboard";
+import Details from "../pages/Details";
 import Mappings from "../pages/Mappings";
 import NotFound from "../pages/NotFound";
 import Sessions from "../pages/Sessions";
 import Sources from "../pages/Sources";
 import Targets from "../pages/Targets";
+import Tools from "../pages/Tools";
 import Workflows from "../pages/Workflows";
 
 export const router = createBrowserRouter([
@@ -38,6 +40,14 @@ export const router = createBrowserRouter([
       {
         path: "targets",
         element: <Targets />,
+      },
+      {
+        path: "tools",
+        element: <Tools />,
+      },
+      {
+        path: "powercenter/:objectType/:objectId",
+        element: <Details />,
       },
     ],
   },

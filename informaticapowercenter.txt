@@ -13,18 +13,25 @@
  - tsconfig.app.json
  - tsconfig.json
  - tsconfig.node.json
+ - tsconfig.node.tsbuildinfo
  - vite.config.ts
  - public/vite.svg
  - src/App.tsx
  - src/main.tsx
  - src/vite-env.d.ts
  - src/assets/react.svg
+ - src/components/common/DataTable.tsx
+ - src/components/dashboard/KPICard.tsx
+ - src/components/dashboard/MappingTypeChart.tsx
  - src/components/layout/Header.tsx
  - src/components/layout/MainLayout.tsx
  - src/components/layout/Sidebar.tsx
+ - src/components/mappings/MappingGraph.tsx
  - src/components/ui/Card.tsx
  - src/components/ui/Loader.tsx
+ - src/components/workflow/WorkflowGraph.tsx
  - src/hooks/useEtlData.ts
+ - src/hooks/useExtractionData.ts
  - src/interfaces/index.ts
  - src/interfaces/mapping.interface.ts
  - src/interfaces/multi-workflow.interface.ts
@@ -34,6 +41,7 @@
  - src/lib/extractor.ts
  - src/lib/mappingHelpers.ts
  - src/pages/Dashboard.tsx
+ - src/pages/Details.tsx
  - src/pages/Mappings.tsx
  - src/pages/NotFound.tsx
  - src/pages/Sessions.tsx
@@ -43,6 +51,7 @@
  - src/router/index.tsx
  - src/services/etlService.ts
  - src/styles/index.css
+ - src/types/extraction.ts
 
 ================================================================================
 
@@ -110,9 +119,15 @@ export default defineConfig([
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.13",
+    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.13.12",
+    "lucide-react": "^0.544.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^6.25.1",
+    "reactflow": "^11.11.4",
+    "recharts": "^3.2.1",
+    "sonner": "^2.0.7",
     "tailwindcss": "^4.1.13",
     "xml2js": "^0.6.2"
   },
@@ -277,6 +292,13 @@ export default defineConfig([
 
 --------------------------------------------------------------------------------
 
+// tsconfig.node.tsbuildinfo
+
+{"root":["./vite.config.ts","./src/lib/extractor.ts","./src/lib/mappinghelpers.ts"],"errors":true,"version":"5.8.3"}
+
+
+--------------------------------------------------------------------------------
+
 // vite.config.ts
 
 import { defineConfig } from 'vite'
@@ -338,6 +360,204 @@ createRoot(document.getElementById('root')!).render(
 // src/assets/react.svg
 
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="35.93" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 228"><path fill="#00D8FF" d="M210.483 73.824a171.49 171.49 0 0 0-8.24-2.597c.465-1.9.893-3.777 1.273-5.621c6.238-30.281 2.16-54.676-11.769-62.708c-13.355-7.7-35.196.329-57.254 19.526a171.23 171.23 0 0 0-6.375 5.848a155.866 155.866 0 0 0-4.241-3.917C100.759 3.829 77.587-4.822 63.673 3.233C50.33 10.957 46.379 33.89 51.995 62.588a170.974 170.974 0 0 0 1.892 8.48c-3.28.932-6.445 1.924-9.474 2.98C17.309 83.498 0 98.307 0 113.668c0 15.865 18.582 31.778 46.812 41.427a145.52 145.52 0 0 0 6.921 2.165a167.467 167.467 0 0 0-2.01 9.138c-5.354 28.2-1.173 50.591 12.134 58.266c13.744 7.926 36.812-.22 59.273-19.855a145.567 145.567 0 0 0 5.342-4.923a168.064 168.064 0 0 0 6.92 6.314c21.758 18.722 43.246 26.282 56.54 18.586c13.731-7.949 18.194-32.003 12.4-61.268a145.016 145.016 0 0 0-1.535-6.842c1.62-.48 3.21-.974 4.76-1.488c29.348-9.723 48.443-25.443 48.443-41.52c0-15.417-17.868-30.326-45.517-39.844Zm-6.365 70.984c-1.4.463-2.836.91-4.3 1.345c-3.24-10.257-7.612-21.163-12.963-32.432c5.106-11 9.31-21.767 12.459-31.957c2.619.758 5.16 1.557 7.61 2.4c23.69 8.156 38.14 20.213 38.14 29.504c0 9.896-15.606 22.743-40.946 31.14Zm-10.514 20.834c2.562 12.94 2.927 24.64 1.23 33.787c-1.524 8.219-4.59 13.698-8.382 15.893c-8.067 4.67-25.32-1.4-43.927-17.412a156.726 156.726 0 0 1-6.437-5.87c7.214-7.889 14.423-17.06 21.459-27.246c12.376-1.098 24.068-2.894 34.671-5.345a134.17 134.17 0 0 1 1.386 6.193ZM87.276 214.515c-7.882 2.783-14.16 2.863-17.955.675c-8.075-4.657-11.432-22.636-6.853-46.752a156.923 156.923 0 0 1 1.869-8.499c10.486 2.32 22.093 3.988 34.498 4.994c7.084 9.967 14.501 19.128 21.976 27.15a134.668 134.668 0 0 1-4.877 4.492c-9.933 8.682-19.886 14.842-28.658 17.94ZM50.35 144.747c-12.483-4.267-22.792-9.812-29.858-15.863c-6.35-5.437-9.555-10.836-9.555-15.216c0-9.322 13.897-21.212 37.076-29.293c2.813-.98 5.757-1.905 8.812-2.773c3.204 10.42 7.406 21.315 12.477 32.332c-5.137 11.18-9.399 22.249-12.634 32.792a134.718 134.718 0 0 1-6.318-1.979Zm12.378-84.26c-4.811-24.587-1.616-43.134 6.425-47.789c8.564-4.958 27.502 2.111 47.463 19.835a144.318 144.318 0 0 1 3.841 3.545c-7.438 7.987-14.787 17.08-21.808 26.988c-12.04 1.116-23.565 2.908-34.161 5.309a160.342 160.342 0 0 1-1.76-7.887Zm110.427 27.268a347.8 347.8 0 0 0-7.785-12.803c8.168 1.033 15.994 2.404 23.343 4.08c-2.206 7.072-4.956 14.465-8.193 22.045a381.151 381.151 0 0 0-7.365-13.322Zm-45.032-43.861c5.044 5.465 10.096 11.566 15.065 18.186a322.04 322.04 0 0 0-30.257-.006c4.974-6.559 10.069-12.652 15.192-18.18ZM82.802 87.83a323.167 323.167 0 0 0-7.227 13.238c-3.184-7.553-5.909-14.98-8.134-22.152c7.304-1.634 15.093-2.97 23.209-3.984a321.524 321.524 0 0 0-7.848 12.897Zm8.081 65.352c-8.385-.936-16.291-2.203-23.593-3.793c2.26-7.3 5.045-14.885 8.298-22.6a321.187 321.187 0 0 0 7.257 13.246c2.594 4.48 5.28 8.868 8.038 13.147Zm37.542 31.03c-5.184-5.592-10.354-11.779-15.403-18.433c4.902.192 9.899.29 14.978.29c5.218 0 10.376-.117 15.453-.343c-4.985 6.774-10.018 12.97-15.028 18.486Zm52.198-57.817c3.422 7.8 6.306 15.345 8.596 22.52c-7.422 1.694-15.436 3.058-23.88 4.071a382.417 382.417 0 0 0 7.859-13.026a347.403 347.403 0 0 0 7.425-13.565Zm-16.898 8.101a358.557 358.557 0 0 1-12.281 19.815a329.4 329.4 0 0 1-23.444.823c-7.967 0-15.716-.248-23.178-.732a310.202 310.202 0 0 1-12.513-19.846h.001a307.41 307.41 0 0 1-10.923-20.627a310.278 310.278 0 0 1 10.89-20.637l-.001.001a307.318 307.318 0 0 1 12.413-19.761c7.613-.576 15.42-.876 23.31-.876H128c7.926 0 15.743.303 23.354.883a329.357 329.357 0 0 1 12.335 19.695a358.489 358.489 0 0 1 11.036 20.54a329.472 329.472 0 0 1-11 20.722Zm22.56-122.124c8.572 4.944 11.906 24.881 6.52 51.026c-.344 1.668-.73 3.367-1.15 5.09c-10.622-2.452-22.155-4.275-34.23-5.408c-7.034-10.017-14.323-19.124-21.64-27.008a160.789 160.789 0 0 1 5.888-5.4c18.9-16.447 36.564-22.941 44.612-18.3ZM128 90.808c12.625 0 22.86 10.235 22.86 22.86s-10.235 22.86-22.86 22.86s-22.86-10.235-22.86-22.86s10.235-22.86 22.86-22.86Z"></path></svg>
+
+
+--------------------------------------------------------------------------------
+
+// src/components/common/DataTable.tsx
+
+import {
+  type ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import React from "react";
+
+/**
+ * DataTable genérica con soporte opcional de virtualización.
+ * - data: filas
+ * - columns: ColumnDef<T>[]
+ * - height: alto del contenedor para virtualización (px)
+ * - virtualized: activar/desactivar virtualización
+ */
+export function DataTable<T>({
+  data,
+  columns,
+  virtualized = false,
+  height = 520,
+}: {
+  data: T[];
+  columns: ColumnDef<T, any>[];
+  virtualized?: boolean;
+  height?: number;
+}) {
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {},
+  });
+
+  const rows = table.getRowModel().rows;
+
+  // Virtualización de filas (opcional)
+  const parentRef = React.useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 40,
+    overscan: 8,
+  });
+
+  const items = virtualized
+    ? rowVirtualizer.getVirtualItems()
+    : rows.map((_, i) => ({ index: i } as any));
+
+  return (
+    <div className="rounded-xl border bg-white shadow-sm">
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-sm">
+          <thead className="sticky top-0 z-10 bg-gray-50">
+            {table.getHeaderGroups().map((hg) => (
+              <tr key={hg.id}>
+                {hg.headers.map((h) => (
+                  <th
+                    key={h.id}
+                    className="px-3 py-2 text-left font-semibold text-gray-700"
+                  >
+                    {h.isPlaceholder
+                      ? null
+                      : flexRender(h.column.columnDef.header, h.getContext())}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+        </table>
+      </div>
+
+      <div
+        ref={parentRef}
+        className="overflow-auto"
+        style={{ height: virtualized ? height : "auto" }}
+      >
+        <table className="min-w-full text-sm">
+          <tbody
+            style={
+              virtualized
+                ? { height: rowVirtualizer.getTotalSize() }
+                : undefined
+            }
+          >
+            {items.map((vi: any) => {
+              const row = rows[virtualized ? vi.index : vi.index];
+              const style = virtualized
+                ? ({
+                    transform: `translateY(${vi.start}px)`,
+                  } as React.CSSProperties)
+                : undefined;
+              return (
+                <tr
+                  key={row.id}
+                  style={style}
+                  className="border-t hover:bg-gray-50"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="px-3 py-2 align-top">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
+--------------------------------------------------------------------------------
+
+// src/components/dashboard/KPICard.tsx
+
+export function KPICard({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: number | string;
+  hint?: string;
+}) {
+  return (
+    <div className="rounded-2xl border bg-white p-4 shadow-sm">
+      <div className="text-xs uppercase tracking-wide text-gray-500">
+        {label}
+      </div>
+      <div className="mt-1 text-2xl font-semibold text-gray-900">{value}</div>
+      {hint ? <div className="mt-1 text-xs text-gray-500">{hint}</div> : null}
+    </div>
+  );
+}
+
+
+--------------------------------------------------------------------------------
+
+// src/components/dashboard/MappingTypeChart.tsx
+
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
+type Mapping = {
+  name: string;
+  transformations?: { type: string }[];
+};
+
+export default function MappingTypeChart({
+  mappings,
+}: {
+  mappings: Mapping[];
+}) {
+  const counts: Record<string, number> = {};
+  mappings?.forEach((m) =>
+    m.transformations?.forEach((t) => {
+      counts[t.type] = (counts[t.type] ?? 0) + 1;
+    })
+  );
+  const data = Object.entries(counts).map(([type, count]) => ({ type, count }));
+
+  return (
+    <div className="h-72 rounded-2xl border bg-white p-4 shadow-sm">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="type" />
+          <YAxis allowDecimals={false} />
+          <Tooltip />
+          <Bar dataKey="count" />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
 
 
 --------------------------------------------------------------------------------
@@ -455,25 +675,105 @@ export const Sidebar = () => (
 
 --------------------------------------------------------------------------------
 
+// src/components/mappings/MappingGraph.tsx
+
+// src/components/mappings/MappingGraph.tsx
+import { useMemo } from "react";
+import ReactFlow, { Background, Controls } from "reactflow";
+import "reactflow/dist/style.css";
+import type { Mapping } from "../../types/extraction";
+
+export default function MappingGraph({ mapping }: { mapping: Mapping }) {
+  const { nodes, edges } = useMemo(() => {
+    const nodes = (mapping.instances ?? []).map((inst, i) => ({
+      id: inst.name,
+      data: { label: `${inst.transformationType}: ${inst.name}` },
+      position: { x: (i % 6) * 240, y: Math.floor(i / 6) * 120 },
+      style: {
+        borderRadius: 12,
+        padding: 8,
+        background: "#fff",
+        border: "1px solid #e5e7eb",
+      },
+    }));
+
+    const edges = (mapping.connectors ?? []).map((c, idx) => ({
+      id: `${c.fromInstance}->${c.toInstance}-${idx}`,
+      source: c.fromInstance,
+      target: c.toInstance,
+      label:
+        c.fromField && c.toField ? `${c.fromField} → ${c.toField}` : undefined,
+      animated: true,
+    }));
+
+    return { nodes, edges };
+  }, [mapping]);
+
+  return (
+    <div className="h-[70vh] rounded-2xl border bg-white shadow-sm">
+      <ReactFlow nodes={nodes} edges={edges} fitView>
+        <Background />
+        <Controls />
+      </ReactFlow>
+    </div>
+  );
+}
+
+
+--------------------------------------------------------------------------------
+
 // src/components/ui/Card.tsx
 
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 
 interface CardProps {
   title: string;
   titleClassName?: string;
   children: ReactNode;
+  to?: string;
+  onClick?: () => void;
 }
 
 export const Card = ({
   title,
   titleClassName = "text-blue-600",
   children,
+  to,
+  onClick,
 }: CardProps) => {
-  return (
-    <div className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+  const cardContent = (
+    <>
       <h3 className={`text-lg font-semibold ${titleClassName}`}>{title}</h3>
       <div className="text-gray-600 mt-2 space-y-1">{children}</div>
+    </>
+  );
+
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className="block bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      >
+        {cardContent}
+      </Link>
+    );
+  }
+
+  if (onClick) {
+    return (
+      <button
+        onClick={onClick}
+        className="w-full text-left bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      >
+        {cardContent}
+      </button>
+    );
+  }
+
+  return (
+    <div className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+      {cardContent}
     </div>
   );
 };
@@ -488,6 +788,65 @@ export const Loader = () => (
     <div className="text-xl font-semibold">Cargando datos...</div>
   </div>
 );
+
+
+--------------------------------------------------------------------------------
+
+// src/components/workflow/WorkflowGraph.tsx
+
+import { useMemo } from "react";
+import ReactFlow, { Background, Controls } from "reactflow";
+import "reactflow/dist/style.css";
+
+type WorkflowTask = {
+  name: string;
+  taskType?: string;
+};
+
+type WorkflowLink = {
+  fromTask: string;
+  toTask: string;
+  condition?: string;
+};
+
+type Workflow = {
+  name: string;
+  tasks: WorkflowTask[];
+  links: WorkflowLink[];
+};
+
+export default function WorkflowGraph({ wf }: { wf: Workflow }) {
+  const { nodes, edges } = useMemo(() => {
+    const nodes = wf.tasks.map((t, i) => ({
+      id: t.name,
+      data: { label: `${t.taskType ?? "Task"}: ${t.name}` },
+      position: { x: (i % 6) * 220, y: Math.floor(i / 6) * 120 },
+      style: {
+        borderRadius: 12,
+        padding: 8,
+        background: "#fff",
+        border: "1px solid #e5e7eb",
+      },
+    }));
+    const edges = wf.links.map((l) => ({
+      id: `${l.fromTask}->${l.toTask}`,
+      source: l.fromTask,
+      target: l.toTask,
+      label: l.condition,
+      animated: true,
+    }));
+    return { nodes, edges };
+  }, [wf]);
+
+  return (
+    <div className="h-[70vh] rounded-2xl border bg-white shadow-sm">
+      <ReactFlow nodes={nodes} edges={edges} fitView>
+        <Background />
+        <Controls />
+      </ReactFlow>
+    </div>
+  );
+}
 
 
 --------------------------------------------------------------------------------
@@ -521,6 +880,45 @@ export const useEtlData = () => {
 
   return { data, loading, error };
 };
+
+
+--------------------------------------------------------------------------------
+
+// src/hooks/useExtractionData.ts
+
+// src/hooks/useExtractionData.ts
+import React from "react";
+import type { Extraction } from "../types/extraction";
+
+export function useExtractionData(path = "/extraction.json") {
+  const [data, setData] = React.useState<Extraction | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    fetch(path)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((json) => {
+        if (alive) setData(json);
+      })
+      .catch((e) => {
+        if (alive) setError(String(e));
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [path]);
+
+  return { data, loading, error };
+}
 
 
 --------------------------------------------------------------------------------
@@ -2086,37 +2484,665 @@ export function mapConfig(config: IConfig): IMappedConfig {
 
 // src/pages/Dashboard.tsx
 
-import { useAppData } from "../components/layout/MainLayout";
+// src/pages/Dashboard.tsx
+import { DataTable } from "../components/common/DataTable";
+import { KPICard } from "../components/dashboard/KPICard";
+import MappingTypeChart from "../components/dashboard/MappingTypeChart";
+import MappingGraph from "../components/mappings/MappingGraph";
+import { useExtractionData } from "../hooks/useExtractionData";
 
-const Dashboard = () => {
-  const { data } = useAppData();
+export default function Dashboard() {
+  const { data, loading, error } = useExtractionData();
+
+  const mappings = data?.mappings ?? [];
+  const s = data?.summary;
+
+  const kpis = {
+    workflows: s?.totalWorkflows ?? 0,
+    sessions: s?.totalSessions ?? 0,
+    mappings: s?.totalMappings ?? mappings.length,
+    sources: s?.totalSources ?? 0,
+    targets: s?.totalTargets ?? 0,
+  };
+
+  const mappingColumns = [
+    { header: "Mapping", accessorKey: "name" },
+    {
+      header: "Válido",
+      cell: ({ row }: any) => (row.original?.isValid === "YES" ? "Sí" : "No"),
+    },
+    {
+      header: "#Transf.",
+      cell: ({ row }: any) => row.original?.transformations?.length ?? 0,
+    },
+    {
+      header: "#Instancias",
+      cell: ({ row }: any) => row.original?.instances?.length ?? 0,
+    },
+  ];
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Dashboard ETL</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg shadow-lg">
-          <h3 className="text-lg font-semibold">Mappings</h3>
-          <p>{data?.summary.totalMappings} disponibles</p>
+    <div className="mx-auto max-w-[1400px] space-y-6 p-6">
+      <h1 className="text-2xl font-semibold text-gray-900">Dashboard IPC</h1>
+      {loading && <div className="text-gray-600">Cargando extracción…</div>}
+      {error && <div className="text-red-600">Error: {error}</div>}
+
+      {!loading && !error && (
+        <>
+          {/* KPIs */}
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+            <KPICard label="Workflows" value={kpis.workflows} />
+            <KPICard label="Sessions" value={kpis.sessions} />
+            <KPICard label="Mappings" value={kpis.mappings} />
+            <KPICard label="Sources" value={kpis.sources} />
+            <KPICard label="Targets" value={kpis.targets} />
+          </div>
+
+          {/* Distribución por tipo de transformación */}
+          <section className="space-y-3">
+            <h2 className="text-lg font-medium">
+              Distribución de Transformations
+            </h2>
+            <MappingTypeChart mappings={mappings as any} />
+          </section>
+
+          {/* Tabla comparativa de Mappings */}
+          <section className="space-y-3">
+            <h2 className="text-lg font-medium">Mappings</h2>
+            <DataTable
+              data={mappings as any}
+              columns={mappingColumns as any}
+              virtualized
+              height={420}
+            />
+          </section>
+
+          {/* Grafo de un Mapping (ejemplo: el primero) */}
+          {mappings[0] && (
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-medium">
+                  Mapping: {mappings[0].name}
+                </h2>
+                <span className="text-sm text-gray-500">
+                  (demo con el primer mapping)
+                </span>
+              </div>
+              <MappingGraph mapping={mappings[0] as any} />
+            </section>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+
+--------------------------------------------------------------------------------
+
+// src/pages/Details.tsx
+
+import { useNavigate, useParams } from "react-router-dom";
+import { useAppData } from "../components/layout/MainLayout";
+import { Loader } from "../components/ui/Loader";
+import type {
+  IMappedMapping,
+  IMappedSession,
+  IMappedSource,
+  IMappedTarget,
+  IMappedWorkflow,
+} from "../interfaces";
+
+const Details = () => {
+  const { objectType, objectId } = useParams<{
+    objectType: string;
+    objectId: string;
+  }>();
+  const navigate = useNavigate();
+  const { data } = useAppData();
+
+  if (!data) return <Loader />;
+
+  // Find the object based on type and id
+  let object:
+    | IMappedMapping
+    | IMappedWorkflow
+    | IMappedSession
+    | IMappedSource
+    | IMappedTarget
+    | null = null;
+  let dependencies: string[] = [];
+
+  switch (objectType) {
+    case "mappings":
+      object = data.mappings.find((m) => m.name === objectId) || null;
+      if (object) {
+        // Find dependencies: sources, targets, transformations
+        const mapping = object as IMappedMapping;
+        dependencies = [
+          ...mapping.instances
+            .filter((i) => i.type === "SOURCE")
+            .map((i) => `Source: ${i.transformationName}`),
+          ...mapping.instances
+            .filter((i) => i.type === "TARGET")
+            .map((i) => `Target: ${i.transformationName}`),
+          ...mapping.transformations.map(
+            (t) => `Transformation: ${t.name} (${t.type})`
+          ),
+        ];
+      }
+      break;
+    case "workflows":
+      object = data.workflows.find((w) => w.name === objectId) || null;
+      if (object) {
+        const workflow = object as IMappedWorkflow;
+        dependencies = workflow.tasks.map(
+          (t) => `Task: ${t.name} (${t.taskType})`
+        );
+      }
+      break;
+    case "sessions":
+      object = data.sessions.find((s) => s.name === objectId) || null;
+      if (object) {
+        const session = object as IMappedSession;
+        dependencies = [`Mapping: ${session.mappingName}`];
+      }
+      break;
+    case "sources":
+      object = data.sources.find((s) => s.name === objectId) || null;
+      break;
+    case "targets":
+      object = data.targets.find((t) => t.name === objectId) || null;
+      break;
+    default:
+      object = null;
+  }
+
+  if (!object) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h2 className="text-xl font-semibold text-red-800 mb-2">
+            Object Not Found
+          </h2>
+          <p className="text-red-600">
+            The {objectType} "{objectId}" could not be found.
+          </p>
+          <button
+            onClick={() => navigate(-1)}
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Go Back
+          </button>
         </div>
-        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-lg shadow-lg">
-          <h3 className="text-lg font-semibold">Workflows</h3>
-          <p>{data?.summary.totalWorkflows} disponibles</p>
-        </div>
-        <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-lg shadow-lg">
-          <h3 className="text-lg font-semibold">Sources</h3>
-          <p>{data?.summary.totalSources} disponibles</p>
-        </div>
-        <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-4 rounded-lg shadow-lg">
-          <h3 className="text-lg font-semibold">Targets</h3>
-          <p>{data?.summary.totalTargets} disponibles</p>
-        </div>
+      </div>
+    );
+  }
+
+  const renderObjectDetails = () => {
+    switch (objectType) {
+      case "mappings":
+        const mapping = object as IMappedMapping;
+
+        // Categorize components
+        const sources = mapping.instances.filter((i) => i.type === "SOURCE");
+        console.log(sources)
+        const targets = mapping.instances.filter((i) => i.type === "TARGET");
+        const sourceQualifiers = mapping.transformations.filter(
+          (t) => t.type === "Source Qualifier"
+        );
+        const otherTransformations = mapping.transformations.filter(
+          (t) => t.type !== "Source Qualifier"
+        );
+
+        return (
+          <>
+            {/* Basic Information */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-2">Basic Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <p>
+                    <strong>Name:</strong> {mapping.name}
+                  </p>
+                  <p>
+                    <strong>Type:</strong> Mapping
+                  </p>
+                  <p>
+                    <strong>Valid:</strong>{" "}
+                    <span
+                      className={
+                        mapping.isValid === "YES"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }
+                    >
+                      {mapping.isValid}
+                    </span>
+                  </p>
+                  <p>
+                    <strong>Description:</strong> {mapping.description || "N/A"}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p>
+                    <strong>Total Transformations:</strong>{" "}
+                    {mapping.transformations.length}
+                  </p>
+                  <p>
+                    <strong>Total Instances:</strong> {mapping.instances.length}
+                  </p>
+                  <p>
+                    <strong>Connectors:</strong> {mapping.connectors.length}
+                  </p>
+                  <p>
+                    <strong>Variables:</strong> {mapping.variables.length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 4-Column Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Column 1: Sources */}
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h4 className="text-md font-semibold mb-3 text-blue-800">
+                  Sources
+                </h4>
+                <div className="space-y-2">
+                  {sources.length > 0 ? (
+                    sources.map((source, index) => (
+                      <div
+                        key={index}
+                        className="bg-white p-2 rounded text-sm border"
+                      >
+                        <div className="font-medium">
+                          {source.transformationName}
+                        </div>
+                        <div className="text-gray-600 text-xs">
+                          {source.transformationType}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm">No sources</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Column 2: Source Qualifier */}
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <h4 className="text-md font-semibold mb-3 text-green-800">
+                  Source Qualifier
+                </h4>
+                <div className="space-y-2">
+                  {sourceQualifiers.length > 0 ? (
+                    sourceQualifiers.map((sq, index) => (
+                      <div
+                        key={index}
+                        className="bg-white p-2 rounded text-sm border"
+                      >
+                        <div className="font-medium">{sq.name}</div>
+                        <div className="text-gray-600 text-xs">{sq.type}</div>
+
+                        {sq.attributes.map((attr, i) => {
+                          if (
+                            (i === 3 && attr.value === "0") ||
+                            (i === 4 && attr.value === "Normal") ||
+                            (i === 5 && attr.value === "NO") ||
+                            (i === 6 && attr.value === "NO") ||
+                            (i === 9 && attr.value === "NO") ||
+                            (i === 10 && attr.value === "Never") ||
+                            !attr.value
+                          ) {
+                            return null;
+                          }
+
+                          return (
+                            <div key={i}>
+                              <div className="text-gray-600 text-xs">
+                                {i} {attr.name}
+                              </div>
+                              <div className="text-gray-600 text-xs">
+                                {attr.value}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm">
+                      No source qualifiers
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Column 3: Other Transformations */}
+              <div className="bg-red-50 p-4 rounded-lg">
+                <h4 className="text-md font-semibold mb-3 text-yellow-800">
+                  Transformations
+                </h4>
+                <div className="space-y-2 overflow-y-auto">
+                  {otherTransformations.length > 0 ? (
+                    otherTransformations.map((trans, index) => (
+                      <div
+                        key={index}
+                        className="bg-white p-2 rounded text-sm border"
+                      >
+                        <div className="font-medium">{trans.name}</div>
+                        <div className="text-gray-600 text-xs">
+                          {trans.type}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm">No transformations</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Column 4: Targets */}
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <h4 className="text-md font-semibold mb-3 text-red-800">
+                  Targets
+                </h4>
+                <div className="space-y-2">
+                  {targets.length > 0 ? (
+                    targets.map((target, index) => (
+                      <div
+                        key={index}
+                        className="bg-white p-2 rounded text-sm border"
+                      >
+                        <div className="font-medium">
+                          {target.transformationName}
+                        </div>
+                        <div className="text-gray-600 text-xs">
+                          {target.transformationType}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm">No targets</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      case "workflows":
+        const workflow = object as IMappedWorkflow;
+        return (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">
+                  Basic Information
+                </h3>
+                <div className="space-y-2">
+                  <p>
+                    <strong>Name:</strong> {workflow.name}
+                  </p>
+                  <p>
+                    <strong>Type:</strong> Workflow
+                  </p>
+                  <p>
+                    <strong>Valid:</strong>{" "}
+                    <span
+                      className={
+                        workflow.isValid === "YES"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }
+                    >
+                      {workflow.isValid}
+                    </span>
+                  </p>
+                  <p>
+                    <strong>Enabled:</strong>{" "}
+                    <span
+                      className={
+                        workflow.isEnabled === "YES"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }
+                    >
+                      {workflow.isEnabled}
+                    </span>
+                  </p>
+                  <p>
+                    <strong>Server:</strong> {workflow.serverName}
+                  </p>
+                  <p>
+                    <strong>Description:</strong>{" "}
+                    {workflow.description || "N/A"}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Statistics</h3>
+                <div className="space-y-2">
+                  <p>
+                    <strong>Tasks:</strong> {workflow.tasks.length}
+                  </p>
+                  <p>
+                    <strong>Links:</strong> {workflow.links.length}
+                  </p>
+                  <p>
+                    <strong>Variables:</strong> {workflow.variables.length}
+                  </p>
+                </div>
+              </div>
+            </div>
+            {dependencies.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-2">Tasks</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {dependencies.map((dep, index) => (
+                    <div key={index} className="bg-gray-50 p-2 rounded text-sm">
+                      {dep}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        );
+      case "sessions":
+        const session = object as IMappedSession;
+        return (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">
+                  Basic Information
+                </h3>
+                <div className="space-y-2">
+                  <p>
+                    <strong>Name:</strong> {session.name}
+                  </p>
+                  <p>
+                    <strong>Type:</strong> Session
+                  </p>
+                  <p>
+                    <strong>Valid:</strong>{" "}
+                    <span
+                      className={
+                        session.isValid === "YES"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }
+                    >
+                      {session.isValid}
+                    </span>
+                  </p>
+                  <p>
+                    <strong>Reusable:</strong> {session.reusable}
+                  </p>
+                  <p>
+                    <strong>Description:</strong> {session.description || "N/A"}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Configuration</h3>
+                <div className="space-y-2">
+                  <p>
+                    <strong>Mapping:</strong> {session.mappingName}
+                  </p>
+                  <p>
+                    <strong>Config Reference:</strong>{" "}
+                    {session.configReferenceName}
+                  </p>
+                  <p>
+                    <strong>Version:</strong> {session.versionNumber}
+                  </p>
+                </div>
+              </div>
+            </div>
+            {dependencies.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-2">Dependencies</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {dependencies.map((dep, index) => (
+                    <div key={index} className="bg-gray-50 p-2 rounded text-sm">
+                      {dep}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        );
+      case "sources":
+        const source = object as IMappedSource;
+        return (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">
+                  Basic Information
+                </h3>
+                <div className="space-y-2">
+                  <p>
+                    <strong>Name:</strong> {source.name}
+                  </p>
+                  <p>
+                    <strong>Type:</strong> Source
+                  </p>
+                  <p>
+                    <strong>Database Type:</strong> {source.databaseType}
+                  </p>
+                  <p>
+                    <strong>Owner:</strong> {source.ownerName}
+                  </p>
+                  <p>
+                    <strong>Description:</strong> {source.description || "N/A"}
+                  </p>
+                  <p>
+                    <strong>Flat File:</strong>{" "}
+                    {source.isFlatFile ? "Yes" : "No"}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Fields</h3>
+                <p>
+                  <strong>Total Fields:</strong> {source.fields.length}
+                </p>
+                <div className="mt-2 max-h-40 overflow-y-auto">
+                  {source.fields.slice(0, 5).map((field, index) => (
+                    <div
+                      key={index}
+                      className="text-sm bg-gray-50 p-1 rounded mb-1"
+                    >
+                      {field.name} ({field.dataType})
+                    </div>
+                  ))}
+                  {source.fields.length > 5 && (
+                    <p className="text-sm text-gray-500">
+                      ... and {source.fields.length - 5} more fields
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      case "targets":
+        const target = object as IMappedTarget;
+        return (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">
+                  Basic Information
+                </h3>
+                <div className="space-y-2">
+                  <p>
+                    <strong>Name:</strong> {target.name}
+                  </p>
+                  <p>
+                    <strong>Type:</strong> Target
+                  </p>
+                  <p>
+                    <strong>Database Type:</strong> {target.databaseType}
+                  </p>
+                  <p>
+                    <strong>Description:</strong> {target.description || "N/A"}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Fields</h3>
+                <p>
+                  <strong>Total Fields:</strong> {target.fields.length}
+                </p>
+                <div className="mt-2 max-h-40 overflow-y-auto">
+                  {target.fields.slice(0, 5).map((field, index) => (
+                    <div
+                      key={index}
+                      className="text-sm bg-gray-50 p-1 rounded mb-1"
+                    >
+                      {field.name} ({field.dataType})
+                    </div>
+                  ))}
+                  {target.fields.length > 5 && (
+                    <p className="text-sm text-gray-500">
+                      ... and {target.fields.length - 5} more fields
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      default:
+        return <p>Unsupported object type</p>;
+    }
+  };
+
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 mb-4"
+        >
+          ← Back
+        </button>
+        <h1 className="text-3xl font-bold capitalize">{objectType} Details</h1>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-md p-6">
+        {renderObjectDetails()}
       </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default Details;
 
 
 --------------------------------------------------------------------------------
@@ -2144,8 +3170,9 @@ const Mappings = () => {
               key={mapping.name}
               title={mapping.name}
               titleClassName="text-blue-600"
+              to={`/powercenter/mappings/${mapping.name}`}
             >
-              <p>Estado: {mapping.isValid}</p>
+              <p>Estado: {mapping.isValid === "YES" ? "Válido" : "Inválido"}</p>
               <p>Transformaciones: {mapping.transformations?.length || 0}</p>
             </Card>
           ))
@@ -2232,6 +3259,7 @@ const Sessions = () => {
                 key={session.name}
                 title={session.name}
                 titleClassName="text-teal-600"
+                to={`/powercenter/sessions/${session.name}`}
               >
                 <p>Mapping: {session.mappingName}</p>
                 <p>Estado: {session.isValid}</p>
@@ -2290,6 +3318,7 @@ const Sources = () => {
               key={source.name}
               title={source.name}
               titleClassName="text-purple-600"
+              to={`/powercenter/sources/${source.name}`}
             >
               <p>Tipo: {source.databaseType}</p>
               <div className="mt-2">
@@ -2347,6 +3376,7 @@ const Targets = () => {
               key={target.name}
               title={target.name}
               titleClassName="text-red-600"
+              to={`/powercenter/targets/${target.name}`}
             >
               <p>Tipo: {target.databaseType}</p>
               <div className="mt-2">
@@ -2404,11 +3434,13 @@ const Workflows = () => {
               key={workflow.name}
               title={workflow.name}
               titleClassName="text-green-600"
+              to={`/powercenter/workflows/${workflow.name}`}
             >
               <p>
                 Estado: {workflow.isValid} / {workflow.isEnabled}
               </p>
               <p>Tareas: {workflow.tasks?.length || 0}</p>
+              <p>Archivo de parámetros: {workflow.attributes[0].value}</p>
             </Card>
           ))
         ) : (
@@ -2431,6 +3463,7 @@ import { MainLayout } from "../components/layout/MainLayout";
 
 // Eager loading: Importa todos los componentes de página directamente
 import Dashboard from "../pages/Dashboard";
+import Details from "../pages/Details";
 import Mappings from "../pages/Mappings";
 import NotFound from "../pages/NotFound";
 import Sessions from "../pages/Sessions";
@@ -2467,6 +3500,10 @@ export const router = createBrowserRouter([
         path: "targets",
         element: <Targets />,
       },
+      {
+        path: "powercenter/:objectType/:objectId",
+        element: <Details />,
+      },
     ],
   },
   {
@@ -2496,6 +3533,71 @@ export const getEtlData = async (): Promise<IFlatExtractionData> => {
 /* src/styles/index.css */
 
 @import "tailwindcss";
+
+
+--------------------------------------------------------------------------------
+
+// src/types/extraction.ts
+
+// src/types/extraction.ts
+export type ExtractionSummary = {
+  totalWorkflows: number;
+  totalSessions: number;
+  totalMappings: number;
+  totalSources: number;
+  totalTargets: number;
+  totalTransformations: number;
+};
+
+export type MappingField = {
+  name: string;
+  portType?: string;
+  dataType?: string;
+  precision?: string;
+  scale?: string;
+  description?: string;
+};
+
+export type MappingTransformation = {
+  name: string;
+  type: string; // p.ej. "Expression", "Joiner", "Source Qualifier" …
+  description?: string;
+  reusable?: string; // "YES" | "NO"
+  fields?: MappingField[];
+};
+
+export type MappingInstance = {
+  name: string;
+  type: "SOURCE" | "TARGET" | "TRANSFORMATION";
+  transformationName: string;
+  transformationType: string; // p.ej. "Expression", "Source Definition", "Target Definition" …
+};
+
+export type MappingConnector = {
+  fromInstance: string;
+  fromInstanceType: string;
+  toInstance: string;
+  toInstanceType: string;
+  fromField?: string;
+  toField?: string;
+};
+
+export type Mapping = {
+  name: string;
+  isValid?: string; // "YES" | "NO"
+  description?: string;
+  transformations?: MappingTransformation[];
+  instances?: MappingInstance[];
+  connectors?: MappingConnector[];
+};
+
+export type Extraction = {
+  repositoryName?: string;
+  folderName?: string;
+  summary?: ExtractionSummary;
+  mappings?: Mapping[];
+  // workflows?: Workflow[]; // si existe, puedes tiparlo luego
+};
 
 
 --------------------------------------------------------------------------------
