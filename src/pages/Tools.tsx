@@ -1,15 +1,8 @@
 import { useState } from "react";
 import { Card } from "../components/ui/Card";
+import  ExpressionValidator from "./ExpressionValidator";
 
 // Placeholder components for each tool
-const ExpressionValidator = () => {
-  return (
-    <Card title="">
-      AQUI DEBE IR UNA LISTA DE OBJETOS DE POWER BI QUE NO TIENEN ALGUNOS
-      CONECTORES DE ENTRADA
-    </Card>
-  );
-};
 
 const DependencySearcher = () => {
   return (
