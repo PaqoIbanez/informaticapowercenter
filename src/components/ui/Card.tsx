@@ -11,6 +11,7 @@ interface CardProps {
   size?: "sm" | "md" | "lg";
   icon?: ReactNode;
   badge?: string | number;
+  right?: ReactNode;
   status?: "success" | "warning" | "error" | "info";
 }
 
@@ -24,12 +25,14 @@ export const Card = ({
   size = "md",
   icon,
   badge,
+  right,
   status,
 }: CardProps) => {
   // Clases base según variante
   const variantClasses = {
     default: "bg-white border border-slate-200/60 shadow-md hover:shadow-xl",
-    gradient: "bg-gradient-to-br from-white to-slate-50 border border-slate-200/60 shadow-lg hover:shadow-xl",
+    gradient:
+      "bg-gradient-to-br from-white to-slate-50 border border-slate-200/60 shadow-lg hover:shadow-xl",
     glass: "glass-effect border border-white/30 shadow-lg hover:shadow-xl",
     minimal: "bg-white/80 border border-slate-100 shadow-sm hover:shadow-md",
   };
@@ -44,7 +47,7 @@ export const Card = ({
   // Clases de título según variante
   const getTitleClasses = () => {
     if (titleClassName) return titleClassName;
-    
+
     switch (variant) {
       case "gradient":
         return "text-gradient";
@@ -69,7 +72,9 @@ export const Card = ({
     <div className="relative">
       {/* Indicador de estado */}
       {status && (
-        <div className={`absolute -top-2 -right-2 w-3 h-3 ${statusColors[status]} rounded-full border-2 border-white shadow-sm`}></div>
+        <div
+          className={`absolute -top-2 -right-2 w-3 h-3 ${statusColors[status]} rounded-full border-2 border-white shadow-sm`}
+        ></div>
       )}
 
       {/* Header con icono y badge */}
@@ -84,18 +89,18 @@ export const Card = ({
             {title}
           </h3>
         </div>
-        
-        {badge && (
-          <span className="flex-shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 ml-2">
-            {badge}
-          </span>
-        )}
+
+        {right
+          ? right
+          : badge && (
+              <span className="flex-shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 ml-2">
+                {badge}
+              </span>
+            )}
       </div>
 
       {/* Contenido */}
-      <div className="text-slate-600 space-y-2 leading-relaxed">
-        {children}
-      </div>
+      <div className="text-slate-600 space-y-2 leading-relaxed">{children}</div>
 
       {/* Efecto decorativo para variante gradient */}
       {variant === "gradient" && (
@@ -105,7 +110,8 @@ export const Card = ({
   );
 
   // Clases comunes para interactividad
-  const interactiveClasses = "group relative overflow-hidden rounded-xl transition-all duration-300 hover:-translate-y-1 active:translate-y-0 cursor-pointer";
+  const interactiveClasses =
+    "group relative overflow-hidden rounded-xl transition-all duration-300 hover:-translate-y-1 active:translate-y-0 cursor-pointer";
   const baseClasses = `${variantClasses[variant]} ${sizeClasses[size]} ${interactiveClasses}`;
 
   if (to) {
@@ -129,9 +135,10 @@ export const Card = ({
   }
 
   return (
-    <div className={`${variantClasses[variant]} ${sizeClasses[size]} rounded-xl transition-all duration-300 hover:shadow-lg`}>
+    <div
+      className={`${variantClasses[variant]} ${sizeClasses[size]} rounded-xl transition-all duration-300 hover:shadow-lg`}
+    >
       {cardContent}
     </div>
   );
 };
-

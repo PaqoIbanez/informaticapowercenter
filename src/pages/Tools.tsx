@@ -1,19 +1,9 @@
 import { useState } from "react";
 import { Card } from "../components/ui/Card";
-import  ExpressionValidator from "./ExpressionValidator";
+import DependencySearcher from "./DependencySearcher";
+import ExpressionValidator from "./ExpressionValidator";
 
 // Placeholder components for each tool
-
-const DependencySearcher = () => {
-  return (
-    <Card title="">
-      AQUI DEBE HABER UNA LISTA DESPLEGABLE DE TODOS LOS OBJETOS DE POWER BI
-      SOURCES Y TARGETS, CON OPCION PARA ESCRIBIR Y BUSCAR MAS RAPIDO, CUANDO
-      SELECCIONE ALGUNO, DEBAJO DEBE ACTUALIZARSE CON TODOS LOS OBJETOS QUE
-      TENGAN UNA DEPENDENCIA DE DICHO OBJETO
-    </Card>
-  );
-};
 
 const SqlDetector = () => {
   return (
@@ -48,7 +38,7 @@ export default function Tools() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-7xl mx-auto p-6 space-y-8">
+      <div className="mx-auto p-6 space-y-8">
         {/* Header Section */}
         <div className="bg-white rounded-2xl border border-slate-200/60 p-6 shadow-md">
           <div className="flex items-center space-x-4 mb-6">
